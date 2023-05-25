@@ -38,7 +38,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import javax.annotation.Nullable;
 import org.apache.rocketmq.common.AbortProcessException;
 import org.apache.rocketmq.common.Pair;
 import org.apache.rocketmq.common.ServiceThread;
@@ -194,11 +193,11 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    public static void writeResponse(Channel channel, RemotingCommand request, @Nullable RemotingCommand response) {
+    public static void writeResponse(Channel channel, RemotingCommand request, RemotingCommand response) {
         writeResponse(channel, request, response, null);
     }
 
-    public static void writeResponse(Channel channel, RemotingCommand request, @Nullable RemotingCommand response,
+    public static void writeResponse(Channel channel, RemotingCommand request, RemotingCommand response,
         Consumer<Future<?>> callback) {
         if (response == null) {
             return;

@@ -20,21 +20,12 @@ package org.apache.rocketmq.common;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class MixAllTest {
-    @Test
-    public void testGetLocalInetAddress() throws Exception {
-        List<String> localInetAddress = MixAll.getLocalInetAddress();
-        String local = InetAddress.getLocalHost().getHostAddress();
-        assertThat(localInetAddress).contains("127.0.0.1");
-        assertThat(local).isNotNull();
-    }
 
     @Test
     public void testBrokerVIPChannel() {
@@ -72,12 +63,6 @@ public class MixAllTest {
         String fileName = System.getProperty("java.io.tmpdir") + File.separator + "MixAllTest" + System.currentTimeMillis();
         MixAll.string2File("MixAll_testString2File", fileName);
         assertThat(MixAll.file2String(fileName)).isEqualTo("MixAll_testString2File");
-    }
-
-    @Test
-    public void testGetLocalhostByNetworkInterface() throws Exception {
-        assertThat(MixAll.LOCALHOST).isNotNull();
-        assertThat(MixAll.getLocalhostByNetworkInterface()).isNotNull();
     }
 
     @Test

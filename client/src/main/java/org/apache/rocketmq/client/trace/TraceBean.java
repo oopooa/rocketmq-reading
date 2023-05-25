@@ -17,11 +17,11 @@
 package org.apache.rocketmq.client.trace;
 
 import org.apache.rocketmq.client.producer.LocalTransactionState;
-import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.message.MessageType;
+import org.apache.rocketmq.common.utils.NetworkUtil;
 
 public class TraceBean {
-    private static final String LOCAL_ADDRESS = UtilAll.ipToIPv4Str(UtilAll.getIP());
+    private static final String LOCAL_ADDRESS;
     private String topic = "";
     private String msgId = "";
     private String offsetMsgId = "";
@@ -36,6 +36,15 @@ public class TraceBean {
     private LocalTransactionState transactionState;
     private String transactionId;
     private boolean fromTransactionCheck;
+
+    static {
+        byte[] ip = NetworkUtil.getIP();
+        if (ip.length == 16) {
+            LOCAL_ADDRESS = NetworkUtil.ipToIPv6Str(ip);
+        } else {
+            LOCAL_ADDRESS = NetworkUtil.ipToIPv4Str(ip);
+        }
+    }
 
     public MessageType getMsgType() {
         return msgType;
