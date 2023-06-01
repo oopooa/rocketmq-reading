@@ -119,8 +119,6 @@ public class DefaultMessageStoreCleanFilesTest {
         assertEquals(3, paths.length);
         initMessageStore(config, diskSpaceCleanForciblyRatio);
 
-
-
         // build and put 55 messages, exactly one message per CommitLog file.
         buildAndPutMessagesToMessageStore(msgCount);
         MappedFileQueue commitLogQueue = getMappedFileQueueCommitLog();

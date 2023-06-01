@@ -26,11 +26,6 @@ import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.attribute.CQType;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.message.MessageAccessor;
-import org.apache.rocketmq.common.message.MessageConst;
-import org.apache.rocketmq.common.message.MessageDecoder;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
-import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
 import org.apache.rocketmq.store.DispatchRequest;
@@ -95,7 +90,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
         this.storePath = storePath;
         this.mappedFileSize = mappedFileSize;
         this.messageStore = messageStore;
-        this.commitLogSize = messageStore.getCommitLog().getCommitLogSize();
+        this.commitLogSize = messageStore.getMessageStoreConfig().getMaxMessageSize();
 
         this.topic = topic;
         this.queueId = queueId;
@@ -422,8 +417,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
 
     @Override
     public boolean flush(final int flushLeastPages) {
-        boolean result = this.mappedFileQueue.flush(flushLeastPages);
-        return result;
+        return this.mappedFileQueue.flush(flushLeastPages);
     }
 
     @Override
@@ -512,26 +506,6 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
         // XXX: warn and notify me
         log.error("[NOTIFYME]batch consume queue can not write, {} {}", this.topic, this.queueId);
         this.messageStore.getRunningFlags().makeLogicsQueueError();
-    }
-
-    @Override
-    public void assignQueueOffset(QueueOffsetOperator queueOffsetOperator, MessageExtBrokerInner msg) {
-        String topicQueueKey = getTopic() + "-" + getQueueId();
-
-        long queueOffset = queueOffsetOperator.getBatchQueueOffset(topicQueueKey);
-
-        if (MessageSysFlag.check(msg.getSysFlag(), MessageSysFlag.INNER_BATCH_FLAG)) {
-            MessageAccessor.putProperty(msg, MessageConst.PROPERTY_INNER_BASE, String.valueOf(queueOffset));
-            msg.setPropertiesString(MessageDecoder.messageProperties2String(msg.getProperties()));
-        }
-        msg.setQueueOffset(queueOffset);
-    }
-
-    @Override
-    public void increaseQueueOffset(QueueOffsetOperator queueOffsetOperator, MessageExtBrokerInner msg,
-        short messageNum) {
-        String topicQueueKey = getTopic() + "-" + getQueueId();
-        queueOffsetOperator.increaseBatchQueueOffset(topicQueueKey, messageNum);
     }
 
     public boolean putBatchMessagePositionInfo(final long offset, final int size, final long tagsCode,
@@ -819,7 +793,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
 
     /**
      * Find the offset of which the value is equal or larger than the given targetValue.
-     * If there are many values equal to the target, then find the earliest one.
+     * If there are multiple values equal to the target, return the earliest one.
      */
     public static int binarySearchRight(ByteBuffer byteBuffer, int left, int right, final int unitSize,
         final int unitShift,
@@ -999,7 +973,6 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
 
     /**
      * Batch msg offset (deep logic offset)
-     *
      * @return max deep offset
      */
     @Override
@@ -1010,6 +983,17 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
     @Override
     public long getMinOffsetInQueue() {
         return minOffsetInQueue;
+    }
+
+    @Override
+    public long getQueueOffset(QueueOffsetOperator queueOffsetOperator) {
+        return queueOffsetOperator.getBatchQueueOffset(topic + "-" + queueId);
+    }
+
+    @Override
+    public void increaseQueueOffset(QueueOffsetOperator queueOffsetOperator,
+        short messageNum) {
+        queueOffsetOperator.increaseBatchQueueOffset(topic + "-" + queueId, messageNum);
     }
 
     @Override

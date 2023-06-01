@@ -40,7 +40,6 @@ import org.apache.rocketmq.store.CommitLog;
 import org.apache.rocketmq.store.ConsumeQueue;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.DispatchRequest;
-import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
 
@@ -160,7 +159,7 @@ public class ConsumeQueueStore {
                 this.messageStoreConfig.getMapperFileSizeBatchConsumeQueue(),
                 this.messageStore);
         } else {
-            throw new RuntimeException(format("queue type %s is not supported.", cqType.toString()));
+            throw new RuntimeException(format("queue type %s is not supported.", cqType));
         }
     }
 
@@ -174,14 +173,14 @@ public class ConsumeQueueStore {
         }
     }
 
-    private ExecutorService buildExecutorService(BlockingQueue<Runnable> blockingQueue, String threadNamePrefix) {
+    private ExecutorService buildExecutorService(BlockingQueue<Runnable> blockingQueue) {
         return new ThreadPoolExecutor(
             this.messageStore.getBrokerConfig().getRecoverThreadPoolNums(),
             this.messageStore.getBrokerConfig().getRecoverThreadPoolNums(),
             1000 * 60,
             TimeUnit.MILLISECONDS,
             blockingQueue,
-            new ThreadFactoryImpl(threadNamePrefix));
+            new ThreadFactoryImpl("RecoverConsumeQueueThread_"));
     }
 
     public void recover(ConsumeQueueInterface consumeQueue) {
@@ -204,7 +203,7 @@ public class ConsumeQueueStore {
         }
         final CountDownLatch countDownLatch = new CountDownLatch(count);
         BlockingQueue<Runnable> recoverQueue = new LinkedBlockingQueue<>();
-        final ExecutorService executor = buildExecutorService(recoverQueue, "RecoverConsumeQueueThread_");
+        final ExecutorService executor = buildExecutorService(recoverQueue);
         List<FutureTask<Boolean>> result = new ArrayList<>(count);
         try {
             for (ConcurrentMap<Integer, ConsumeQueueInterface> maps : this.consumeQueueTable.values()) {
@@ -378,14 +377,22 @@ public class ConsumeQueueStore {
         this.queueOffsetOperator.setBatchTopicQueueTable(batchTopicQueueTable);
     }
 
-    public void assignQueueOffset(MessageExtBrokerInner msg) {
-        ConsumeQueueInterface consumeQueue = findOrCreateConsumeQueue(msg.getTopic(), msg.getQueueId());
-        consumeQueue.assignQueueOffset(this.queueOffsetOperator, msg);
+    public long getQueueOffset(String topic, int queueId) {
+        ConsumeQueueInterface consumeQueue = findOrCreateConsumeQueue(topic, queueId);
+        return consumeQueue.getQueueOffset(queueOffsetOperator);
     }
 
-    public void increaseQueueOffset(MessageExtBrokerInner msg, short messageNum) {
-        ConsumeQueueInterface consumeQueue = findOrCreateConsumeQueue(msg.getTopic(), msg.getQueueId());
-        consumeQueue.increaseQueueOffset(this.queueOffsetOperator, msg, messageNum);
+    public long getLmqQueueOffset(String topicQueueKey) {
+        return queueOffsetOperator.getLmqOffset(topicQueueKey);
+    }
+
+    public void increaseQueueOffset(String topic, int queueId, short messageNum) {
+        ConsumeQueueInterface consumeQueue = findOrCreateConsumeQueue(topic, queueId);
+        consumeQueue.increaseQueueOffset(queueOffsetOperator, messageNum);
+    }
+
+    public void increaseLmqOffset(String queueKey, short messageNum) {
+        queueOffsetOperator.increaseLmqOffset(queueKey, messageNum);
     }
 
     public void updateQueueOffset(String topic, int queueId, long offset) {

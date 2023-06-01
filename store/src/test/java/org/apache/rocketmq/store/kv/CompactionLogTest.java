@@ -26,7 +26,6 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBrokerInner;
 import org.apache.rocketmq.store.AppendMessageResult;
 import org.apache.rocketmq.store.AppendMessageStatus;
-import org.apache.rocketmq.store.CommitLog;
 import org.apache.rocketmq.store.DefaultMessageStore;
 import org.apache.rocketmq.store.MappedFileQueue;
 import org.apache.rocketmq.store.MessageExtEncoder;
@@ -75,20 +74,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class CompactionLogTest {
-    CompactionLog clog;
     MessageStoreConfig storeConfig;
     MessageStore defaultMessageStore;
     CompactionPositionMgr positionMgr;
     String topic = "ctopic";
     int queueId = 0;
-    int offsetMemorySize = 1024;
     int compactionFileSize = 10240;
     int compactionCqFileSize = 1024;
 
-
-    private static MessageExtEncoder encoder = new MessageExtEncoder(1024);
+    private static MessageExtEncoder encoder = new MessageExtEncoder(new MessageStoreConfig());
     private static SocketAddress storeHost;
     private static SocketAddress bornHost;
+    private static final int QUEUE_OFFSET_POS = 4 + 4 + 4 + 4 + 4;
 
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
@@ -123,6 +120,7 @@ public class CompactionLogTest {
 
     static int queueOffset = 0;
     static int keyCount = 10;
+
     public static ByteBuffer buildMessage() {
         MessageExtBrokerInner msg = new MessageExtBrokerInner();
         msg.setTopic("ctopic");
@@ -134,16 +132,16 @@ public class CompactionLogTest {
         msg.setBornTimestamp(System.currentTimeMillis());
         msg.setStoreHost(storeHost);
         msg.setBornHost(bornHost);
-        msg.setQueueOffset(queueOffset);
-        queueOffset++;
         for (int i = 1; i < 3; i++) {
             msg.putUserProperty(String.valueOf(i), "xxx" + i);
         }
         msg.setPropertiesString(MessageDecoder.messageProperties2String(msg.getProperties()));
         encoder.encode(msg);
+        ByteBuffer preEncodeBuffer = encoder.getEncoderBuffer();
+        preEncodeBuffer.putLong(QUEUE_OFFSET_POS, queueOffset);
+        queueOffset++;
         return encoder.getEncoderBuffer();
     }
-
 
     @Test
     public void testCheck() throws IllegalAccessException {
@@ -189,9 +187,8 @@ public class CompactionLogTest {
     @Test
     public void testCompaction() throws DigestException, NoSuchAlgorithmException, IllegalAccessException {
         Iterator<SelectMappedBufferResult> iterator = mock(Iterator.class);
-        SelectMappedBufferResult smb = mock(SelectMappedBufferResult.class);
-        when(iterator.hasNext()).thenAnswer((Answer<Boolean>)invocationOnMock -> queueOffset < 1024);
-        when(iterator.next()).thenAnswer((Answer<SelectMappedBufferResult>)invocation ->
+        when(iterator.hasNext()).thenAnswer((Answer<Boolean>) invocationOnMock -> queueOffset < 1024);
+        when(iterator.next()).thenAnswer((Answer<SelectMappedBufferResult>) invocation ->
             new SelectMappedBufferResult(0, buildMessage(), 0, null));
 
         MappedFile mf = mock(MappedFile.class);
@@ -199,9 +196,9 @@ public class CompactionLogTest {
         doReturn(iterator).when(mf).iterator(0);
 
         MessageStore messageStore = mock(DefaultMessageStore.class);
-        CommitLog commitLog = mock(CommitLog.class);
-        when(messageStore.getCommitLog()).thenReturn(commitLog);
-        when(commitLog.getCommitLogSize()).thenReturn(1024 * 1024);
+        MessageStoreConfig messageStoreConfig = mock(MessageStoreConfig.class);
+        when(messageStoreConfig.getMappedFileSizeCommitLog()).thenReturn(1024 * 1024);
+        when(messageStore.getMessageStoreConfig()).thenReturn(messageStoreConfig);
         CompactionLog clog = mock(CompactionLog.class);
         FieldUtils.writeField(clog, "defaultMessageStore", messageStore, true);
         doCallRealMethod().when(clog).getOffsetMap(any());
@@ -219,7 +216,7 @@ public class CompactionLogTest {
         List<MessageExt> compactResult = Lists.newArrayList();
         when(clog.asyncPutMessage(any(ByteBuffer.class), any(MessageExt.class),
             any(CompactionLog.TopicPartitionLog.class)))
-            .thenAnswer((Answer<CompletableFuture<PutMessageResult>>)invocation -> {
+            .thenAnswer((Answer<CompletableFuture<PutMessageResult>>) invocation -> {
                 compactResult.add(invocation.getArgument(1));
                 return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.PUT_OK,
                     new AppendMessageResult(AppendMessageStatus.PUT_OK)));
