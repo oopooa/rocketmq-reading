@@ -110,4 +110,9 @@ public class ClusterGrpcIT extends GrpcBaseIT {
     public void testConsumeOrderly() throws Exception {
         super.testConsumeOrderly();
     }
+
+    @Test
+    public void testPullMessage() throws Exception {
+        super.testPullMessage();
+    }
 }
