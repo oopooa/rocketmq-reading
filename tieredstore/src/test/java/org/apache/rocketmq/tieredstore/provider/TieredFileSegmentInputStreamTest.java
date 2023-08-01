@@ -20,6 +20,7 @@ package org.apache.rocketmq.tieredstore.provider;
 import com.google.common.base.Supplier;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,7 +95,7 @@ public class TieredFileSegmentInputStreamTest {
         codaBuffer.putInt(TieredCommitLog.BLANK_MAGIC_CODE);
         long timeMillis = System.currentTimeMillis();
         codaBuffer.putLong(timeMillis);
-        codaBuffer.flip();
+        ((Buffer)codaBuffer).flip();
         int codaBufferSize = codaBuffer.remaining();
         bufferSize += codaBufferSize;
 
@@ -153,7 +154,7 @@ public class TieredFileSegmentInputStreamTest {
         byteBuffer.putLong(1);
         byteBuffer.putLong(2);
         byteBuffer.putLong(3);
-        byteBuffer.flip();
+        ((Buffer)byteBuffer).flip();
         List<ByteBuffer> uploadBufferList = Arrays.asList(byteBuffer);
 
         // build expected byte buffer for verifying the TieredFileSegmentInputStream
@@ -230,7 +231,7 @@ public class TieredFileSegmentInputStreamTest {
     private void verifyInputStream(InputStream inputStream, ByteBuffer expectedBuffer, int expectedBufferReadPos,
         int expectedMarkCalledPos) {
         try {
-            expectedBuffer.position(expectedBufferReadPos);
+            ((Buffer)expectedBuffer).position(expectedBufferReadPos);
             while (true) {
                 if (expectedMarkCalledPos == expectedBuffer.position()) {
                     inputStream.mark(0);
@@ -258,7 +259,7 @@ public class TieredFileSegmentInputStreamTest {
     private void verifyInputStreamViaBatchRead(InputStream inputStream, ByteBuffer expectedBuffer,
         int expectedBufferReadPos, int expectedMarkCalledPos, int readBatchSize) {
         try {
-            expectedBuffer.position(expectedBufferReadPos);
+            ((Buffer)expectedBuffer).position(expectedBufferReadPos);
             byte[] buf = new byte[readBatchSize];
             while (true) {
                 if (expectedMarkCalledPos == expectedBuffer.position()) {

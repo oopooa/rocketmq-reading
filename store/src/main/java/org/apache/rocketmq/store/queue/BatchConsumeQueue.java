@@ -18,6 +18,7 @@
 package org.apache.rocketmq.store.queue;
 
 import java.io.File;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
@@ -220,7 +221,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
             long mappedFileOffset = 0;
             while (true) {
                 for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
-                    byteBuffer.position(i);
+                    ((Buffer)byteBuffer).position(i);
                     long offset = byteBuffer.getLong();
                     int size = byteBuffer.getInt();
                     byteBuffer.getLong();//tagscode
@@ -370,7 +371,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
                 mappedFile.setFlushedPosition(0);
 
                 for (int i = 0; i < logicFileSize; i += CQ_STORE_UNIT_SIZE) {
-                    byteBuffer.position(i);
+                    ((Buffer)byteBuffer).position(i);
                     long offset = byteBuffer.getLong();
                     int size = byteBuffer.getInt();
                     byteBuffer.getLong();//tagscode
@@ -445,7 +446,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
                 try {
                     int startPos = result.getByteBuffer().position();
                     for (int i = 0; i < result.getSize(); i += BatchConsumeQueue.CQ_STORE_UNIT_SIZE) {
-                        result.getByteBuffer().position(startPos + i);
+                        ((Buffer)result.getByteBuffer()).position(startPos + i);
                         long offsetPy = result.getByteBuffer().getLong();
                         result.getByteBuffer().getInt(); //size
                         result.getByteBuffer().getLong();//tagscode
@@ -552,8 +553,8 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
             log.warn("Reput behind {} topic:{} queue:{} offset:{} behind:{}", flag, topic, queueId, offset, behind);
         }
 
-        this.byteBufferItem.flip();
-        this.byteBufferItem.limit(CQ_STORE_UNIT_SIZE);
+        ((Buffer)this.byteBufferItem).flip();
+        ((Buffer)this.byteBufferItem).limit(CQ_STORE_UNIT_SIZE);
         this.byteBufferItem.putLong(offset);
         this.byteBufferItem.putInt(size);
         this.byteBufferItem.putLong(tagsCode);
@@ -913,9 +914,9 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
                 return null;
             }
             ByteBuffer tmpBuffer = sbr.getByteBuffer().slice();
-            tmpBuffer.position(MSG_COMPACT_OFFSET_INDEX);
+            ((Buffer)tmpBuffer).position(MSG_COMPACT_OFFSET_INDEX);
             ByteBuffer compactOffsetStoreBuffer = tmpBuffer.slice();
-            compactOffsetStoreBuffer.limit(MSG_COMPACT_OFFSET_LENGTH);
+            ((Buffer)compactOffsetStoreBuffer).limit(MSG_COMPACT_OFFSET_LENGTH);
 
             int relativePos = sbr.getByteBuffer().position();
             long offsetPy = sbr.getByteBuffer().getLong();
@@ -925,7 +926,7 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
             long msgBaseOffset = sbr.getByteBuffer().getLong();
             short batchSize = sbr.getByteBuffer().getShort();
             int compactedOffset = sbr.getByteBuffer().getInt();
-            sbr.getByteBuffer().position(relativePos + CQ_STORE_UNIT_SIZE);
+            ((Buffer)sbr.getByteBuffer()).position(relativePos + CQ_STORE_UNIT_SIZE);
 
             return new CqUnit(msgBaseOffset, offsetPy, sizePy, tagsCode, batchSize, compactedOffset, compactOffsetStoreBuffer);
         }
@@ -1086,9 +1087,9 @@ public class BatchConsumeQueue implements ConsumeQueueInterface {
                     int current = 0;
                     while (current < len) {
                         // skip physicalOffset and message length fields.
-                        buffer.position(current + MSG_TAG_OFFSET_INDEX);
+                        ((Buffer)buffer).position(current + MSG_TAG_OFFSET_INDEX);
                         long tagCode = buffer.getLong();
-                        buffer.position(current + MSG_BATCH_SIZE_INDEX);
+                        ((Buffer)buffer).position(current + MSG_BATCH_SIZE_INDEX);
                         long batchSize = buffer.getShort();
                         if (filter.isMatchedByConsumeQueue(tagCode, null)) {
                             match += batchSize;

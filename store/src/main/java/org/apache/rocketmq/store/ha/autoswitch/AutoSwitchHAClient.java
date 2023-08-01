@@ -19,6 +19,7 @@ package org.apache.rocketmq.store.ha.autoswitch;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -257,8 +258,8 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
             this.lastReadTimestamp = 0;
             this.processPosition = 0;
 
-            this.byteBufferRead.position(0);
-            this.byteBufferRead.limit(READ_MAX_BUFFER_SIZE);
+            ((Buffer)this.byteBufferRead).position(0);
+            ((Buffer)this.byteBufferRead).limit(READ_MAX_BUFFER_SIZE);
         }
     }
 
@@ -288,8 +289,8 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
     }
 
     private boolean sendHandshakeHeader() throws IOException {
-        this.handshakeHeaderBuffer.position(0);
-        this.handshakeHeaderBuffer.limit(HANDSHAKE_HEADER_SIZE);
+        ((Buffer)this.handshakeHeaderBuffer).position(0);
+        ((Buffer)this.handshakeHeaderBuffer).limit(HANDSHAKE_HEADER_SIZE);
         // Original state
         this.handshakeHeaderBuffer.putInt(HAConnectionState.HANDSHAKE.ordinal());
         // IsSyncFromLastFile
@@ -301,7 +302,7 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
         // Slave brokerId
         this.handshakeHeaderBuffer.putLong(this.brokerId);
 
-        this.handshakeHeaderBuffer.flip();
+        ((Buffer)this.handshakeHeaderBuffer).flip();
         return this.haWriter.write(this.socketChannel, this.handshakeHeaderBuffer);
     }
 
@@ -320,11 +321,11 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
     }
 
     private boolean reportSlaveOffset(HAConnectionState currentState, final long offsetToReport) throws IOException {
-        this.transferHeaderBuffer.position(0);
-        this.transferHeaderBuffer.limit(TRANSFER_HEADER_SIZE);
+        ((Buffer)this.transferHeaderBuffer).position(0);
+        ((Buffer)this.transferHeaderBuffer).limit(TRANSFER_HEADER_SIZE);
         this.transferHeaderBuffer.putInt(currentState.ordinal());
         this.transferHeaderBuffer.putLong(offsetToReport);
-        this.transferHeaderBuffer.flip();
+        ((Buffer)this.transferHeaderBuffer).flip();
         return this.haWriter.write(this.socketChannel, this.transferHeaderBuffer);
     }
 
@@ -524,7 +525,7 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
                                     long startOffset = byteBufferRead.getLong(AutoSwitchHAClient.this.processPosition + i * entrySize + 4);
                                     epochEntries.add(new EpochEntry(epoch, startOffset));
                                 }
-                                byteBufferRead.position(readSocketPos);
+                                ((Buffer)byteBufferRead).position(readSocketPos);
                                 AutoSwitchHAClient.this.processPosition += bodySize;
                                 LOGGER.info("Receive handshake, masterMaxPosition {}, masterEpochEntries:{}, try truncate log", masterOffset, epochEntries);
                                 if (!doTruncate(epochEntries, masterOffset)) {
@@ -541,9 +542,9 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
                                     break;
                                 }
                                 byte[] bodyData = new byte[bodySize];
-                                byteBufferRead.position(AutoSwitchHAClient.this.processPosition + AutoSwitchHAConnection.TRANSFER_HEADER_SIZE);
+                                ((Buffer)byteBufferRead).position(AutoSwitchHAClient.this.processPosition + AutoSwitchHAConnection.TRANSFER_HEADER_SIZE);
                                 byteBufferRead.get(bodyData);
-                                byteBufferRead.position(readSocketPos);
+                                ((Buffer)byteBufferRead).position(readSocketPos);
                                 AutoSwitchHAClient.this.processPosition += AutoSwitchHAConnection.TRANSFER_HEADER_SIZE + bodySize;
                                 long slavePhyOffset = AutoSwitchHAClient.this.messageStore.getMaxPhyOffset();
                                 if (slavePhyOffset != 0) {
@@ -582,7 +583,7 @@ public class AutoSwitchHAClient extends ServiceThread implements HAClient {
                     }
 
                     if (!byteBufferRead.hasRemaining()) {
-                        byteBufferRead.position(AutoSwitchHAClient.this.processPosition);
+                        ((Buffer)byteBufferRead).position(AutoSwitchHAClient.this.processPosition);
                         byteBufferRead.compact();
                         AutoSwitchHAClient.this.processPosition = 0;
                     }

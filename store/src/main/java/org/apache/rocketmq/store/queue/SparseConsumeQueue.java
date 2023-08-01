@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.store.queue;
 
+import java.nio.Buffer;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
@@ -64,7 +65,7 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
             long processOffset = mappedFile.getFileFromOffset();
             while (true) {
                 for (int i = 0; i < mappedFileSize; i += CQ_STORE_UNIT_SIZE) {
-                    byteBuffer.position(i);
+                    ((Buffer)byteBuffer).position(i);
                     long offset = byteBuffer.getLong();
                     int size = byteBuffer.getInt();
                     byteBuffer.getLong();   //tagscode
@@ -251,8 +252,8 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
     public void putEndPositionInfo(MappedFile mappedFile) {
         // cache max offset
         if (!mappedFile.isFull()) {
-            this.byteBufferItem.flip();
-            this.byteBufferItem.limit(CQ_STORE_UNIT_SIZE);
+            ((Buffer)this.byteBufferItem).flip();
+            ((Buffer)this.byteBufferItem).limit(CQ_STORE_UNIT_SIZE);
             this.byteBufferItem.putLong(-1);
             this.byteBufferItem.putInt(0);
             this.byteBufferItem.putLong(0);
@@ -321,7 +322,7 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
 
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
         for (int i = mappedFile.getReadPosition() - CQ_STORE_UNIT_SIZE; i >= 0; i -= CQ_STORE_UNIT_SIZE) {
-            byteBuffer.position(i);
+            ((Buffer)byteBuffer).position(i);
             long offset = byteBuffer.getLong();
             int size = byteBuffer.getInt();
             long tagsCode = byteBuffer.getLong();   //tagscode
@@ -329,7 +330,7 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
             long msgBaseOffset = byteBuffer.getLong();
             short batchSize = byteBuffer.getShort();
             if (offset >= 0 && size > 0 && msgBaseOffset >= 0 && batchSize > 0) {
-                byteBuffer.position(i);     //reset position
+                ((Buffer)byteBuffer).position(i);     //reset position
                 return function.apply(byteBuffer.slice());
             }
         }
@@ -345,7 +346,7 @@ public class SparseConsumeQueue extends BatchConsumeQueue {
 
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
         for (int i = mappedFile.getReadPosition() - CQ_STORE_UNIT_SIZE; i >= 0; i -= CQ_STORE_UNIT_SIZE) {
-            byteBuffer.position(i);
+            ((Buffer)byteBuffer).position(i);
             long offset = byteBuffer.getLong();
             int size = byteBuffer.getInt();
             byteBuffer.getLong();   //tagscode

@@ -32,6 +32,7 @@ import io.openmessaging.storage.dledger.store.file.SelectMmapBufferResult;
 import io.openmessaging.storage.dledger.utils.DLedgerUtils;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
@@ -105,7 +106,7 @@ public class DLedgerCommitLog extends CommitLog {
         dLedgerFileStore = (DLedgerMmapFileStore) dLedgerServer.getdLedgerStore();
         DLedgerMmapFileStore.AppendHook appendHook = (entry, buffer, bodyOffset) -> {
             assert bodyOffset == DLedgerEntry.BODY_OFFSET;
-            buffer.position(buffer.position() + bodyOffset + MessageDecoder.PHY_POS_POSITION);
+            ((Buffer)buffer).position(((Buffer)buffer).position() + bodyOffset + MessageDecoder.PHY_POS_POSITION);
             buffer.putLong(entry.getPos() + bodyOffset);
         };
         dLedgerFileStore.addAppendHook(appendHook);
@@ -309,7 +310,7 @@ public class DLedgerCommitLog extends CommitLog {
             return;
         }
         ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-        byteBuffer.position(mappedFile.getWrotePosition());
+        ((Buffer)byteBuffer).position(mappedFile.getWrotePosition());
         boolean needWriteMagicCode = true;
         // 1 TOTAL SIZE
         byteBuffer.getInt(); //size
@@ -323,7 +324,7 @@ public class DLedgerCommitLog extends CommitLog {
         dividedCommitlogOffset = mappedFile.getFileFromOffset() + mappedFile.getFileSize();
         log.info("Recover old commitlog needWriteMagicCode={} pos={} file={} dividedCommitlogOffset={}", needWriteMagicCode, mappedFile.getFileFromOffset() + mappedFile.getWrotePosition(), mappedFile.getFileName(), dividedCommitlogOffset);
         if (needWriteMagicCode) {
-            byteBuffer.position(mappedFile.getWrotePosition());
+            ((Buffer)byteBuffer).position(mappedFile.getWrotePosition());
             byteBuffer.putInt(mappedFile.getFileSize() - mappedFile.getWrotePosition());
             byteBuffer.putInt(BLANK_MAGIC_CODE);
             mappedFile.flush(0);
@@ -360,13 +361,13 @@ public class DLedgerCommitLog extends CommitLog {
             if (magicOld == CommitLog.BLANK_MAGIC_CODE
                 || magicOld == MessageDecoder.MESSAGE_MAGIC_CODE
                 || magicOld == MessageDecoder.MESSAGE_MAGIC_CODE_V2) {
-                byteBuffer.position(pos);
+                ((Buffer)byteBuffer).position(pos);
                 return super.checkMessageAndReturnSize(byteBuffer, checkCRC, checkDupInfo, readBody);
             }
             if (magic == MmapFileList.BLANK_MAGIC_CODE) {
                 return new DispatchRequest(0, true);
             }
-            byteBuffer.position(pos + bodyOffset);
+            ((Buffer)byteBuffer).position(pos + bodyOffset);
             DispatchRequest dispatchRequest = super.checkMessageAndReturnSize(byteBuffer, checkCRC, checkDupInfo, readBody);
             if (dispatchRequest.isSuccess()) {
                 dispatchRequest.setBufferSize(dispatchRequest.getMsgSize() + bodyOffset);
@@ -900,11 +901,11 @@ public class DLedgerCommitLog extends CommitLog {
                 int bodyLen = messagesByteBuff.getInt();
                 int bodyPos = messagesByteBuff.position();
                 int bodyCrc = UtilAll.crc32(messagesByteBuff.array(), bodyPos, bodyLen);
-                messagesByteBuff.position(bodyPos + bodyLen);
+                ((Buffer)messagesByteBuff).position(bodyPos + bodyLen);
                 // 6 properties
                 short propertiesLen = messagesByteBuff.getShort();
                 int propertiesPos = messagesByteBuff.position();
-                messagesByteBuff.position(propertiesPos + propertiesLen);
+                ((Buffer)messagesByteBuff).position(propertiesPos + propertiesLen);
 
                 final byte[] topicData = messageExtBatch.getTopic().getBytes(MessageDecoder.CHARSET_UTF8);
 
@@ -961,7 +962,7 @@ public class DLedgerCommitLog extends CommitLog {
                     msgStoreItemMemory.put(messagesByteBuff.array(), propertiesPos, propertiesLen);
                 }
                 byte[] data = new byte[msgLen];
-                msgStoreItemMemory.clear();
+                ((Buffer)msgStoreItemMemory).clear();
                 msgStoreItemMemory.get(data);
                 batchBody.add(data);
             }
@@ -970,8 +971,8 @@ public class DLedgerCommitLog extends CommitLog {
         }
 
         private void resetByteBuffer(final ByteBuffer byteBuffer, final int limit) {
-            byteBuffer.flip();
-            byteBuffer.limit(limit);
+            ((Buffer)byteBuffer).flip();
+            ((Buffer)byteBuffer).limit(limit);
         }
     }
 

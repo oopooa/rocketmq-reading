@@ -19,6 +19,7 @@ package org.apache.rocketmq.store.timer;
 import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;
 import java.io.File;
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -403,7 +404,7 @@ public class TimerMessageStore {
             boolean stopCheck = false;
             for (; position < sbr.getSize(); position += TimerLog.UNIT_SIZE) {
                 try {
-                    bf.position(position);
+                    ((Buffer)bf).position(position);
                     int size = bf.getInt();//size
                     bf.getLong();//prev pos
                     int magic = bf.getInt();
@@ -715,7 +716,7 @@ public class TimerMessageStore {
         String realTopic = messageExt.getProperty(MessageConst.PROPERTY_REAL_TOPIC);
         Slot slot = timerWheel.getSlot(delayedTime);
         ByteBuffer tmpBuffer = timerLogBuffer;
-        tmpBuffer.clear();
+        ((Buffer)tmpBuffer).clear();
         tmpBuffer.putInt(TimerLog.UNIT_SIZE); //size
         tmpBuffer.putLong(slot.lastPos); //prev pos
         tmpBuffer.putInt(magic); //magic
@@ -781,10 +782,10 @@ public class TimerMessageStore {
                 long prevPos = -1;
                 try {
                     int position = (int) (currOffsetPy % timerLogFileSize);
-                    timeSbr.getByteBuffer().position(position);
+                    ((Buffer)timeSbr.getByteBuffer()).position(position);
                     timeSbr.getByteBuffer().getInt(); //size
                     prevPos = timeSbr.getByteBuffer().getLong();
-                    timeSbr.getByteBuffer().position(position + TimerLog.UNIT_PRE_SIZE_FOR_MSG);
+                    ((Buffer)timeSbr.getByteBuffer()).position(position + TimerLog.UNIT_PRE_SIZE_FOR_MSG);
                     long offsetPy = timeSbr.getByteBuffer().getLong();
                     int sizePy = timeSbr.getByteBuffer().getInt();
                     if (null == msgSbr || msgSbr.getStartOffset() > offsetPy) {
@@ -797,7 +798,7 @@ public class TimerMessageStore {
                         ByteBuffer bf = msgSbr.getByteBuffer();
                         int firstPos = (int) (offsetPy % commitLogFileSize);
                         for (int pos = firstPos; pos < firstPos + sizePy; pos += 4096) {
-                            bf.position(pos);
+                            ((Buffer)bf).position(pos);
                             bf.get();
                         }
                     }
@@ -903,7 +904,7 @@ public class TimerMessageStore {
                 long prevPos = -1;
                 try {
                     int position = (int) (currOffsetPy % timerLogFileSize);
-                    timeSbr.getByteBuffer().position(position);
+                    ((Buffer)timeSbr.getByteBuffer()).position(position);
                     timeSbr.getByteBuffer().getInt(); //size
                     prevPos = timeSbr.getByteBuffer().getLong();
                     int magic = timeSbr.getByteBuffer().getInt();
@@ -1009,11 +1010,11 @@ public class TimerMessageStore {
     private MessageExt getMessageByCommitOffset(long offsetPy, int sizePy) {
         for (int i = 0; i < 3; i++) {
             MessageExt msgExt = null;
-            bufferLocal.get().position(0);
-            bufferLocal.get().limit(sizePy);
+            ((Buffer)bufferLocal.get()).position(0);
+            ((Buffer)bufferLocal.get()).limit(sizePy);
             boolean res = messageStore.getData(offsetPy, sizePy, bufferLocal.get());
             if (res) {
-                bufferLocal.get().flip();
+                ((Buffer)bufferLocal.get()).flip();
                 msgExt = MessageDecoder.decode(bufferLocal.get(), true, false, false);
             }
             if (null == msgExt) {
@@ -1196,7 +1197,7 @@ public class TimerMessageStore {
                 }
                 ByteBuffer bf = timeSbr.getByteBuffer();
                 for (int position = 0; position < timeSbr.getSize(); position += TimerLog.UNIT_SIZE) {
-                    bf.position(position);
+                    ((Buffer)bf).position(position);
                     bf.getInt();//size
                     bf.getLong();//prev pos
                     int magic = bf.getInt(); //magic

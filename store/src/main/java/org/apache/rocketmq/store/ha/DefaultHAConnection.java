@@ -18,6 +18,7 @@
 package org.apache.rocketmq.store.ha;
 
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -212,7 +213,7 @@ public class DefaultHAConnection implements HAConnection {
             int readSizeZeroTimes = 0;
 
             if (!this.byteBufferRead.hasRemaining()) {
-                this.byteBufferRead.flip();
+                ((Buffer)this.byteBufferRead).flip();
                 this.processPosition = 0;
             }
 
@@ -314,11 +315,11 @@ public class DefaultHAConnection implements HAConnection {
                             .getHaSendHeartbeatInterval()) {
 
                             // Build Header
-                            this.byteBufferHeader.position(0);
-                            this.byteBufferHeader.limit(TRANSFER_HEADER_SIZE);
+                            ((Buffer)this.byteBufferHeader).position(0);
+                            ((Buffer)this.byteBufferHeader).limit(TRANSFER_HEADER_SIZE);
                             this.byteBufferHeader.putLong(this.nextTransferFromWhere);
                             this.byteBufferHeader.putInt(0);
-                            this.byteBufferHeader.flip();
+                            ((Buffer)this.byteBufferHeader).flip();
 
                             this.lastWriteOver = this.transferData();
                             if (!this.lastWriteOver)
@@ -352,15 +353,15 @@ public class DefaultHAConnection implements HAConnection {
                         long thisOffset = this.nextTransferFromWhere;
                         this.nextTransferFromWhere += size;
 
-                        selectResult.getByteBuffer().limit(size);
+                        ((Buffer)selectResult.getByteBuffer()).limit(size);
                         this.selectMappedBufferResult = selectResult;
 
                         // Build Header
-                        this.byteBufferHeader.position(0);
-                        this.byteBufferHeader.limit(TRANSFER_HEADER_SIZE);
+                        ((Buffer)this.byteBufferHeader).position(0);
+                        ((Buffer)this.byteBufferHeader).limit(TRANSFER_HEADER_SIZE);
                         this.byteBufferHeader.putLong(thisOffset);
                         this.byteBufferHeader.putInt(size);
-                        this.byteBufferHeader.flip();
+                        ((Buffer)this.byteBufferHeader).flip();
 
                         this.lastWriteOver = this.transferData();
                     } else {

@@ -17,6 +17,7 @@
 
 package org.apache.rocketmq.store;
 
+import java.nio.Buffer;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -243,7 +244,7 @@ public class ConsumeQueueExt {
 
     protected void fullFillToEnd(final MappedFile mappedFile, final int wrotePosition) {
         ByteBuffer mappedFileBuffer = mappedFile.sliceByteBuffer();
-        mappedFileBuffer.position(wrotePosition);
+        ((Buffer)mappedFileBuffer).position(wrotePosition);
 
         // ending.
         mappedFileBuffer.putShort((short) -1);
@@ -498,7 +499,7 @@ public class ConsumeQueueExt {
             this.size = tempSize;
 
             if (tempSize > 0) {
-                buffer.position(buffer.position() + this.size);
+                ((Buffer)buffer).position(((Buffer)buffer).position() + this.size);
             }
         }
 
@@ -519,8 +520,8 @@ public class ConsumeQueueExt {
                 temp = ByteBuffer.allocate(this.size);
             }
 
-            temp.flip();
-            temp.limit(this.size);
+            ((Buffer)temp).flip();
+            ((Buffer)temp).limit(this.size);
 
             temp.putShort(this.size);
             temp.putLong(this.tagsCode);

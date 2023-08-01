@@ -16,6 +16,7 @@
  */
 package org.apache.rocketmq.tieredstore.util;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,10 +98,10 @@ public class MessageBufferUtil {
 
     public static ByteBuffer getOffsetIdBuffer(ByteBuffer message) {
         ByteBuffer idBuffer = ByteBuffer.allocate(TieredStoreUtil.MSG_ID_LENGTH);
-        idBuffer.limit(TieredStoreUtil.MSG_ID_LENGTH);
+        ((Buffer)idBuffer).limit(TieredStoreUtil.MSG_ID_LENGTH);
         idBuffer.putLong(message.getLong(message.position() + STORE_HOST_POSITION));
         idBuffer.putLong(getCommitLogOffset(message));
-        idBuffer.flip();
+        ((Buffer)idBuffer).flip();
         return idBuffer;
     }
 
@@ -126,20 +127,20 @@ public class MessageBufferUtil {
         try {
             long startCommitLogOffset = CQItemBufferUtil.getCommitLogOffset(cqBuffer);
             for (int pos = cqBuffer.position(); pos < cqBuffer.limit(); pos += TieredConsumeQueue.CONSUME_QUEUE_STORE_UNIT_SIZE) {
-                cqBuffer.position(pos);
+                ((Buffer)cqBuffer).position(pos);
                 int diff = (int) (CQItemBufferUtil.getCommitLogOffset(cqBuffer) - startCommitLogOffset);
                 int size = CQItemBufferUtil.getSize(cqBuffer);
                 if (diff + size > msgBuffer.limit()) {
                     logger.error("MessageBufferUtil#splitMessage: message buffer size is incorrect: record in consume queue: {}, actual: {}", diff + size, msgBuffer.remaining());
                     return messageList;
                 }
-                msgBuffer.position(diff);
+                ((Buffer)msgBuffer).position(diff);
 
                 int magicCode = getMagicCode(msgBuffer);
                 if (magicCode == TieredCommitLog.BLANK_MAGIC_CODE) {
                     logger.warn("MessageBufferUtil#splitMessage: message decode error: blank magic code, this message may be coda, try to fix offset");
                     diff = diff + TieredCommitLog.CODA_SIZE;
-                    msgBuffer.position(diff);
+                    ((Buffer)msgBuffer).position(diff);
                     magicCode = getMagicCode(msgBuffer);
                 }
                 if (magicCode != MessageDecoder.MESSAGE_MAGIC_CODE && magicCode != MessageDecoder.MESSAGE_MAGIC_CODE_V2) {
