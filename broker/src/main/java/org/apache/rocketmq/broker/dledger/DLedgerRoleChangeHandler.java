@@ -108,17 +108,17 @@ public class DLedgerRoleChangeHandler implements DLedgerLeaderElector.RoleChange
             if (null != slaveSyncFuture) {
                 slaveSyncFuture.cancel(false);
             }
-            this.brokerController.getSlaveSynchronize().setMasterAddr(null);
-            slaveSyncFuture = this.brokerController.getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
+            this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
+            slaveSyncFuture = this.brokerController.getBrokerScheduleService().getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         if (System.currentTimeMillis() - lastSyncTimeMs > 10 * 1000) {
-                            brokerController.getSlaveSynchronize().syncAll();
+                            brokerController.getBrokerClusterService().getSlaveSynchronize().syncAll();
                             lastSyncTimeMs = System.currentTimeMillis();
                         }
                         //timer checkpoint, latency-sensitive, so sync it more frequently
-                        brokerController.getSlaveSynchronize().syncTimerCheckPoint();
+                        brokerController.getBrokerClusterService().getSlaveSynchronize().syncTimerCheckPoint();
                     } catch (Throwable e) {
                         LOGGER.error("ScheduledTask SlaveSynchronize syncAll error.", e);
                     }
@@ -129,7 +129,7 @@ public class DLedgerRoleChangeHandler implements DLedgerLeaderElector.RoleChange
             if (null != slaveSyncFuture) {
                 slaveSyncFuture.cancel(false);
             }
-            this.brokerController.getSlaveSynchronize().setMasterAddr(null);
+            this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
         }
     }
 
@@ -140,13 +140,13 @@ public class DLedgerRoleChangeHandler implements DLedgerLeaderElector.RoleChange
         this.brokerController.getBrokerConfig().setBrokerId(brokerId == 0 ? 1 : brokerId); //TO DO check
         this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SLAVE);
 
-        this.brokerController.changeSpecialServiceStatus(false);
+        this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(false);
 
         //handle the slave synchronise
         handleSlaveSynchronize(BrokerRole.SLAVE);
 
         try {
-            this.brokerController.registerBrokerAll(true, true, this.brokerController.getBrokerConfig().isForceRegister());
+            this.brokerController.getBrokerServiceRegistry().registerBrokerAll(true, true, this.brokerController.getBrokerConfig().isForceRegister());
         } catch (Throwable ignored) {
 
         }
@@ -162,14 +162,14 @@ public class DLedgerRoleChangeHandler implements DLedgerLeaderElector.RoleChange
         //handle the slave synchronise
         handleSlaveSynchronize(role);
 
-        this.brokerController.changeSpecialServiceStatus(true);
+        this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(true);
 
         //if the operations above are totally successful, we change to master
         this.brokerController.getBrokerConfig().setBrokerId(0); //TO DO check
         this.brokerController.getMessageStoreConfig().setBrokerRole(role);
 
         try {
-            this.brokerController.registerBrokerAll(true, true, this.brokerController.getBrokerConfig().isForceRegister());
+            this.brokerController.getBrokerServiceRegistry().registerBrokerAll(true, true, this.brokerController.getBrokerConfig().isForceRegister());
         } catch (Throwable ignored) {
 
         }

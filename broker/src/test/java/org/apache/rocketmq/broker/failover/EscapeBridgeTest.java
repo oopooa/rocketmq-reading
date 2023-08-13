@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.bootstrap.BrokerMessageService;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
 import org.apache.rocketmq.broker.topic.TopicRouteInfoManager;
 import org.apache.rocketmq.client.consumer.PullResult;
@@ -72,6 +73,9 @@ public class EscapeBridgeTest {
 
     @Mock
     private DefaultMQProducer defaultMQProducer;
+
+    @Mock
+    private BrokerMessageService brokerMessageService;
 
     private static final String BROKER_NAME = "broker_a";
 
@@ -164,7 +168,8 @@ public class EscapeBridgeTest {
     @Test
     public void getMessageTest() {
         when(brokerController.peekMasterBroker()).thenReturn(brokerController);
-        when(brokerController.getMessageStoreByBrokerName(any())).thenReturn(defaultMessageStore);
+        when(brokerController.getBrokerMessageService()).thenReturn(brokerMessageService);
+        when(brokerController.getBrokerMessageService().getMessageStoreByBrokerName(any())).thenReturn(defaultMessageStore);
         Assertions.assertThatCode(() -> escapeBridge.putMessage(messageExtBrokerInner)).doesNotThrowAnyException();
 
         Assertions.assertThatCode(() -> escapeBridge.getMessage(TEST_TOPIC, 0, DEFAULT_QUEUE_ID, BROKER_NAME, false)).doesNotThrowAnyException();
@@ -173,7 +178,8 @@ public class EscapeBridgeTest {
     @Test
     public void getMessageAsyncTest() {
         when(brokerController.peekMasterBroker()).thenReturn(brokerController);
-        when(brokerController.getMessageStoreByBrokerName(any())).thenReturn(defaultMessageStore);
+        when(brokerController.getBrokerMessageService()).thenReturn(brokerMessageService);
+        when(brokerController.getBrokerMessageService().getMessageStoreByBrokerName(any())).thenReturn(defaultMessageStore);
         Assertions.assertThatCode(() -> escapeBridge.putMessage(messageExtBrokerInner)).doesNotThrowAnyException();
 
         Assertions.assertThatCode(() -> escapeBridge.getMessageAsync(TEST_TOPIC, 0, DEFAULT_QUEUE_ID, BROKER_NAME, false)).doesNotThrowAnyException();

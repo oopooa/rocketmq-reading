@@ -18,10 +18,8 @@ package org.apache.rocketmq.broker.processor;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import java.lang.reflect.Field;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.client.ClientChannelInfo;
-import org.apache.rocketmq.broker.client.net.Broker2Client;
 import org.apache.rocketmq.broker.failover.EscapeBridge;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.TopicConfig;
@@ -74,22 +72,12 @@ public class ChangeInvisibleTimeProcessorTest {
     private String group = "FooBarGroup";
     private ClientChannelInfo clientInfo;
     @Mock
-    private Broker2Client broker2Client;
-
-    @Mock
     private EscapeBridge escapeBridge = new EscapeBridge(this.brokerController);
 
     @Before
     public void init() throws IllegalAccessException, NoSuchFieldException {
         brokerController.setMessageStore(messageStore);
-        Field field = BrokerController.class.getDeclaredField("broker2Client");
-        field.setAccessible(true);
-        field.set(brokerController, broker2Client);
-
-        Field ebField = BrokerController.class.getDeclaredField("escapeBridge");
-        ebField.setAccessible(true);
-        ebField.set(brokerController, this.escapeBridge);
-
+        when(brokerController.getEscapeBridge()).thenReturn(escapeBridge);
         Channel mockChannel = mock(Channel.class);
         when(handlerContext.channel()).thenReturn(mockChannel);
         brokerController.getTopicConfigManager().getTopicConfigTable().put(topic, new TopicConfig());

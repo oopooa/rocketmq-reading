@@ -186,7 +186,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             int reconsumeTimes = requestHeader.getReconsumeTimes() == null ? 0 : requestHeader.getReconsumeTimes();
 
             boolean sendRetryMessageToDeadLetterQueueDirectly = false;
-            if (!brokerController.getRebalanceLockManager().isLockAllExpired(groupName)) {
+            if (!brokerController.getBrokerClusterService().getRebalanceLockManager().isLockAllExpired(groupName)) {
                 LOGGER.info("Group has unexpired lock record, which show it is ordered message, send it to DLQ "
                         + "right now group={}, topic={}, reconsumeTimes={}, maxReconsumeTimes={}.", groupName,
                     newTopic, reconsumeTimes, maxReconsumeTimes);
@@ -308,7 +308,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         if (brokerController.getBrokerConfig().isAsyncSendEnable()) {
             CompletableFuture<PutMessageResult> asyncPutMessageFuture;
             if (sendTransactionPrepareMessage) {
-                asyncPutMessageFuture = this.brokerController.getTransactionalMessageService().asyncPrepareMessage(msgInner);
+                asyncPutMessageFuture = this.brokerController.getBrokerMessageService().getTransactionalMessageService().asyncPrepareMessage(msgInner);
             } else {
                 asyncPutMessageFuture = this.brokerController.getMessageStore().asyncPutMessage(msgInner);
             }
@@ -323,13 +323,13 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                     doResponse(ctx, request, responseFuture);
                 }
                 sendMessageCallback.onComplete(sendMessageContext, response);
-            }, this.brokerController.getPutMessageFutureExecutor());
+            }, this.brokerController.getBrokerNettyServer().getPutMessageFutureExecutor());
             // Returns null to release the send message thread
             return null;
         } else {
             PutMessageResult putMessageResult = null;
             if (sendTransactionPrepareMessage) {
-                putMessageResult = this.brokerController.getTransactionalMessageService().prepareMessage(msgInner);
+                putMessageResult = this.brokerController.getBrokerMessageService().getTransactionalMessageService().prepareMessage(msgInner);
             } else {
                 putMessageResult = this.brokerController.getMessageStore().putMessage(msgInner);
             }
@@ -606,7 +606,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                     doResponse(ctx, request, responseFuture);
                 }
                 sendMessageCallback.onComplete(sendMessageContext, response);
-            }, this.brokerController.getSendMessageExecutor());
+            }, this.brokerController.getBrokerNettyServer().getSendMessageExecutor());
             // Returns null to release the send message thread
             return null;
         } else {

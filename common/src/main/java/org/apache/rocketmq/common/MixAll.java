@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -162,32 +163,30 @@ public class MixAll {
     }
 
     public static String brokerVIPChannel(final boolean isChange, final String brokerAddr) {
-        if (isChange) {
-            int split = brokerAddr.lastIndexOf(":");
-            String ip = brokerAddr.substring(0, split);
-            String port = brokerAddr.substring(split + 1);
-            String brokerAddrNew = ip + ":" + (Integer.parseInt(port) - 2);
-            return brokerAddrNew;
-        } else {
+        if (!isChange) {
             return brokerAddr;
         }
+
+        int split = brokerAddr.lastIndexOf(":");
+        String ip = brokerAddr.substring(0, split);
+        String port = brokerAddr.substring(split + 1);
+        return ip + ":" + (Integer.parseInt(port) - 2);
     }
 
     public static long getPID() {
-        String processName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
-        if (StringUtils.isNotEmpty(processName)) {
-            try {
-                return Long.parseLong(processName.split("@")[0]);
-            } catch (Exception e) {
-                return 0;
-            }
+        String processName = ManagementFactory.getRuntimeMXBean().getName();
+        if (StringUtils.isEmpty(processName)) {
+            return 0;
         }
 
-        return 0;
+        try {
+            return Long.parseLong(processName.split("@")[0]);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     public static synchronized void string2File(final String str, final String fileName) throws IOException {
-
         String bakFile = fileName + ".bak";
         String prevContent = file2String(fileName);
         if (prevContent != null) {
@@ -212,19 +211,22 @@ public class MixAll {
     }
 
     public static String file2String(final File file) throws IOException {
-        if (file.exists()) {
-            byte[] data = new byte[(int) file.length()];
-            boolean result;
-
-            try (FileInputStream inputStream = new FileInputStream(file)) {
-                int len = inputStream.read(data);
-                result = len == data.length;
-            }
-
-            if (result) {
-                return new String(data, "UTF-8");
-            }
+        if (!file.exists()) {
+            return null;
         }
+
+        byte[] data = new byte[(int) file.length()];
+        boolean result;
+
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            int len = inputStream.read(data);
+            result = len == data.length;
+        }
+
+        if (result) {
+            return new String(data, "UTF-8");
+        }
+
         return null;
     }
 
@@ -259,31 +261,35 @@ public class MixAll {
         final boolean onlyImportantField) {
         Field[] fields = object.getClass().getDeclaredFields();
         for (Field field : fields) {
-            if (!Modifier.isStatic(field.getModifiers())) {
-                String name = field.getName();
-                if (!name.startsWith("this")) {
-                    if (onlyImportantField) {
-                        Annotation annotation = field.getAnnotation(ImportantField.class);
-                        if (null == annotation) {
-                            continue;
-                        }
-                    }
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
 
-                    Object value = null;
-                    try {
-                        field.setAccessible(true);
-                        value = field.get(object);
-                        if (null == value) {
-                            value = "";
-                        }
-                    } catch (IllegalAccessException e) {
-                        log.error("Failed to obtain object properties", e);
-                    }
+            String name = field.getName();
+            if (name.startsWith("this")) {
+                continue;
+            }
 
-                    if (logger != null) {
-                        logger.info(name + "=" + value);
-                    }
+            if (onlyImportantField) {
+                Annotation annotation = field.getAnnotation(ImportantField.class);
+                if (null == annotation) {
+                    continue;
                 }
+            }
+
+            Object value = null;
+            try {
+                field.setAccessible(true);
+                value = field.get(object);
+                if (null == value) {
+                    value = "";
+                }
+            } catch (IllegalAccessException e) {
+                log.error("Failed to obtain object properties", e);
+            }
+
+            if (logger != null) {
+                logger.info(name + "=" + value);
             }
         }
     }
@@ -323,23 +329,28 @@ public class MixAll {
         while (true) {
             Field[] fields = objectClass.getDeclaredFields();
             for (Field field : fields) {
-                if (!Modifier.isStatic(field.getModifiers())) {
-                    String name = field.getName();
-                    if (!name.startsWith("this")) {
-                        Object value = null;
-                        try {
-                            field.setAccessible(true);
-                            value = field.get(object);
-                        } catch (IllegalAccessException e) {
-                            log.error("Failed to handle properties", e);
-                        }
+                if (Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
 
-                        if (value != null) {
-                            properties.setProperty(name, value.toString());
-                        }
-                    }
+                String name = field.getName();
+                if (name.startsWith("this")) {
+                    continue;
+                }
+
+                Object value = null;
+                try {
+                    field.setAccessible(true);
+                    value = field.get(object);
+                } catch (IllegalAccessException e) {
+                    log.error("Failed to handle properties", e);
+                }
+
+                if (value != null) {
+                    properties.setProperty(name, value.toString());
                 }
             }
+
             if (objectClass == Object.class || objectClass.getSuperclass() == Object.class) {
                 break;
             }

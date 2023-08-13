@@ -63,20 +63,22 @@ public class MappedFileQueue implements Swappable {
 
     public void checkSelf() {
         List<MappedFile> mappedFiles = new ArrayList<>(this.mappedFiles);
-        if (!mappedFiles.isEmpty()) {
-            Iterator<MappedFile> iterator = mappedFiles.iterator();
-            MappedFile pre = null;
-            while (iterator.hasNext()) {
-                MappedFile cur = iterator.next();
+        if (mappedFiles.isEmpty()) {
+            return;
+        }
 
-                if (pre != null) {
-                    if (cur.getFileFromOffset() - pre.getFileFromOffset() != this.mappedFileSize) {
-                        LOG_ERROR.error("[BUG]The mappedFile queue's data is damaged, the adjacent mappedFile's offset don't match. pre file {}, cur file {}",
-                            pre.getFileName(), cur.getFileName());
-                    }
+        Iterator<MappedFile> iterator = mappedFiles.iterator();
+        MappedFile pre = null;
+        while (iterator.hasNext()) {
+            MappedFile cur = iterator.next();
+
+            if (pre != null) {
+                if (cur.getFileFromOffset() - pre.getFileFromOffset() != this.mappedFileSize) {
+                    LOG_ERROR.error("[BUG]The mappedFile queue's data is damaged, the adjacent mappedFile's offset don't match. pre file {}, cur file {}",
+                        pre.getFileName(), cur.getFileName());
                 }
-                pre = cur;
             }
+            pre = cur;
         }
     }
 
@@ -211,25 +213,25 @@ public class MappedFileQueue implements Swappable {
     }
 
     void deleteExpiredFile(List<MappedFile> files) {
+        if (files.isEmpty()) {
+            return;
+        }
 
-        if (!files.isEmpty()) {
-
-            Iterator<MappedFile> iterator = files.iterator();
-            while (iterator.hasNext()) {
-                MappedFile cur = iterator.next();
-                if (!this.mappedFiles.contains(cur)) {
-                    iterator.remove();
-                    log.info("This mappedFile {} is not contained by mappedFiles, so skip it.", cur.getFileName());
-                }
+        Iterator<MappedFile> iterator = files.iterator();
+        while (iterator.hasNext()) {
+            MappedFile cur = iterator.next();
+            if (!this.mappedFiles.contains(cur)) {
+                iterator.remove();
+                log.info("This mappedFile {} is not contained by mappedFiles, so skip it.", cur.getFileName());
             }
+        }
 
-            try {
-                if (!this.mappedFiles.removeAll(files)) {
-                    log.error("deleteExpiredFile remove failed.");
-                }
-            } catch (Exception e) {
-                log.error("deleteExpiredFile has exception.", e);
+        try {
+            if (!this.mappedFiles.removeAll(files)) {
+                log.error("deleteExpiredFile remove failed.");
             }
+        } catch (Exception e) {
+            log.error("deleteExpiredFile has exception.", e);
         }
     }
 
@@ -412,15 +414,16 @@ public class MappedFileQueue implements Swappable {
     }
 
     public long getMinOffset() {
+        if (this.mappedFiles.isEmpty()) {
+            return -1;
+        }
 
-        if (!this.mappedFiles.isEmpty()) {
-            try {
-                return this.mappedFiles.get(0).getFileFromOffset();
-            } catch (IndexOutOfBoundsException e) {
-                //continue;
-            } catch (Exception e) {
-                log.error("getMinOffset has exception.", e);
-            }
+        try {
+            return this.mappedFiles.get(0).getFileFromOffset();
+        } catch (IndexOutOfBoundsException e) {
+            //continue;
+        } catch (Exception e) {
+            log.error("getMinOffset has exception.", e);
         }
         return -1;
     }

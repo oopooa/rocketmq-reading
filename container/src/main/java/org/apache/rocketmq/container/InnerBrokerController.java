@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.container;
 
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
@@ -38,18 +37,18 @@ public class InnerBrokerController extends BrokerController {
     ) {
         super(brokerConfig, messageStoreConfig);
         this.brokerContainer = brokerContainer;
-        this.brokerOuterAPI = this.brokerContainer.getBrokerOuterAPI();
+        super.setBrokerOuterAPI(this.brokerContainer.getBrokerOuterAPI());
     }
 
     @Override
     protected void initializeRemotingServer() {
-        this.remotingServer = this.brokerContainer.getRemotingServer().newRemotingServer(brokerConfig.getListenPort());
-        this.fastRemotingServer = this.brokerContainer.getRemotingServer().newRemotingServer(brokerConfig.getListenPort() - 2);
+        setRemotingServer(this.brokerContainer.getRemotingServer().newRemotingServer(brokerConfig.getListenPort()));
+        setFastRemotingServer(this.brokerContainer.getRemotingServer().newRemotingServer(brokerConfig.getListenPort() - 2));
     }
 
     @Override
     protected void initializeScheduledTasks() {
-        initializeBrokerScheduledTasks();
+        getBrokerScheduleService().initializeBrokerScheduledTasks();
     }
 
     @Override
@@ -63,11 +62,11 @@ public class InnerBrokerController extends BrokerController {
         startBasicService();
 
         if (!isIsolated && !this.messageStoreConfig.isEnableDLegerCommitLog() && !this.messageStoreConfig.isDuplicationEnable()) {
-            changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MixAll.MASTER_ID);
-            this.registerBrokerAll(true, false, true);
+            this.getBrokerMessageService().changeSpecialServiceStatus(this.brokerConfig.getBrokerId() == MixAll.MASTER_ID);
+            this.getBrokerServiceRegistry().registerBrokerAll(true, false, true);
         }
 
-        scheduledFutures.add(this.scheduledExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(this.getBrokerIdentity()) {
+        getBrokerScheduleService().getScheduledFutures().add(getBrokerScheduleService().getScheduledExecutorService().scheduleAtFixedRate(new AbstractBrokerRunnable(this.getBrokerIdentity()) {
             @Override
             public void run0() {
                 try {
@@ -79,7 +78,7 @@ public class InnerBrokerController extends BrokerController {
                         BrokerController.LOG.info("Skip register for broker is isolated");
                         return;
                     }
-                    InnerBrokerController.this.registerBrokerAll(true, false, brokerConfig.isForceRegister());
+                    InnerBrokerController.this.getBrokerServiceRegistry().registerBrokerAll(true, false, brokerConfig.isForceRegister());
                 } catch (Throwable e) {
                     BrokerController.LOG.error("registerBrokerAll Exception", e);
                 }
@@ -87,13 +86,13 @@ public class InnerBrokerController extends BrokerController {
         }, 1000 * 10, Math.max(10000, Math.min(brokerConfig.getRegisterNameServerPeriod(), 60000)), TimeUnit.MILLISECONDS));
 
         if (this.brokerConfig.isEnableSlaveActingMaster()) {
-            scheduleSendHeartbeat();
+            getBrokerScheduleService().scheduleSendHeartbeat();
 
-            scheduledFutures.add(this.syncBrokerMemberGroupExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(this.getBrokerIdentity()) {
+            getBrokerScheduleService().getScheduledFutures().add(getBrokerScheduleService().getSyncBrokerMemberGroupExecutorService().scheduleAtFixedRate(new AbstractBrokerRunnable(this.getBrokerIdentity()) {
                 @Override
                 public void run0() {
                     try {
-                        InnerBrokerController.this.syncBrokerMemberGroup();
+                        InnerBrokerController.this.getBrokerScheduleService().syncBrokerMemberGroup();
                     } catch (Throwable e) {
                         BrokerController.LOG.error("sync BrokerMemberGroup error. ", e);
                     }
@@ -102,28 +101,23 @@ public class InnerBrokerController extends BrokerController {
         }
 
         if (this.brokerConfig.isEnableControllerMode()) {
-            scheduleSendHeartbeat();
+            getBrokerScheduleService().scheduleSendHeartbeat();
         }
 
         if (brokerConfig.isSkipPreOnline()) {
-            startServiceWithoutCondition();
+            registerBroker();
         }
     }
 
     @Override
     public void shutdown() {
-
         shutdownBasicService();
 
-        for (ScheduledFuture<?> scheduledFuture : scheduledFutures) {
-            scheduledFuture.cancel(true);
-        }
-
-        if (this.remotingServer != null) {
+        if (this.getRemotingServer() != null) {
             this.brokerContainer.getRemotingServer().removeRemotingServer(brokerConfig.getListenPort());
         }
 
-        if (this.fastRemotingServer != null) {
+        if (this.getFastRemotingServer() != null) {
             this.brokerContainer.getRemotingServer().removeRemotingServer(brokerConfig.getListenPort() - 2);
         }
     }
@@ -140,7 +134,7 @@ public class InnerBrokerController extends BrokerController {
 
     @Override
     public long getMinBrokerIdInGroup() {
-        return this.minBrokerIdInGroup;
+        return this.getBrokerClusterService().getMinBrokerIdInGroup();
     }
 
     @Override
@@ -149,7 +143,7 @@ public class InnerBrokerController extends BrokerController {
     }
 
     public BrokerOuterAPI getBrokerOuterAPI() {
-        return brokerContainer.getBrokerOuterAPI();
+        return brokerContainer == null ? super.getBrokerOuterAPI() : brokerContainer.getBrokerOuterAPI();
     }
 
     public BrokerContainer getBrokerContainer() {
@@ -161,7 +155,7 @@ public class InnerBrokerController extends BrokerController {
     }
 
     public NettyClientConfig getNettyClientConfig() {
-        return brokerContainer.getNettyClientConfig();
+        return brokerContainer == null ? super.getNettyClientConfig() : brokerContainer.getNettyClientConfig();
     }
 
     public MessageStore getMessageStoreByBrokerName(String brokerName) {

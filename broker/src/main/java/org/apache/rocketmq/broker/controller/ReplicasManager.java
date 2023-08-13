@@ -264,7 +264,7 @@ public class ReplicasManager {
 
                 this.brokerController.getBrokerConfig().setBrokerId(MixAll.MASTER_ID);
                 this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SYNC_MASTER);
-                this.brokerController.changeSpecialServiceStatus(true);
+                this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(true);
 
                 // Change record
                 this.masterAddress = this.brokerAddress;
@@ -299,7 +299,7 @@ public class ReplicasManager {
 
                 // Change config(compatibility problem)
                 this.brokerController.getMessageStoreConfig().setBrokerRole(BrokerRole.SLAVE);
-                this.brokerController.changeSpecialServiceStatus(false);
+                this.brokerController.getBrokerMessageService().changeSpecialServiceStatus(false);
                 // The brokerId in brokerConfig just means its role(master[0] or slave[>=1])
                 this.brokerConfig.setBrokerId(brokerControllerId);
 
@@ -324,7 +324,7 @@ public class ReplicasManager {
         this.executorService.submit(() -> {
             // Register broker to name-srv
             try {
-                this.brokerController.registerBrokerAll(true, false, this.brokerController.getBrokerConfig().isForceRegister());
+                this.brokerController.getBrokerServiceRegistry().registerBrokerAll(true, false, this.brokerController.getBrokerConfig().isForceRegister());
             } catch (final Throwable e) {
                 LOGGER.error("Error happen when register broker to name-srv, Failed to change broker to {}", this.brokerController.getMessageStoreConfig().getBrokerRole(), e);
                 return;
@@ -351,15 +351,15 @@ public class ReplicasManager {
             if (this.slaveSyncFuture != null) {
                 this.slaveSyncFuture.cancel(false);
             }
-            this.brokerController.getSlaveSynchronize().setMasterAddr(this.masterAddress);
-            slaveSyncFuture = this.brokerController.getScheduledExecutorService().scheduleAtFixedRate(() -> {
+            this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(this.masterAddress);
+            slaveSyncFuture = this.brokerController.getBrokerScheduleService().getScheduledExecutorService().scheduleAtFixedRate(() -> {
                 try {
                     if (System.currentTimeMillis() - lastSyncTimeMs > 10 * 1000) {
-                        brokerController.getSlaveSynchronize().syncAll();
+                        brokerController.getBrokerClusterService().getSlaveSynchronize().syncAll();
                         lastSyncTimeMs = System.currentTimeMillis();
                     }
                     //timer checkpoint, latency-sensitive, so sync it more frequently
-                    brokerController.getSlaveSynchronize().syncTimerCheckPoint();
+                    brokerController.getBrokerClusterService().getSlaveSynchronize().syncTimerCheckPoint();
                 } catch (final Throwable e) {
                     LOGGER.error("ScheduledTask SlaveSynchronize syncAll error.", e);
                 }
@@ -369,7 +369,7 @@ public class ReplicasManager {
             if (this.slaveSyncFuture != null) {
                 this.slaveSyncFuture.cancel(false);
             }
-            this.brokerController.getSlaveSynchronize().setMasterAddr(null);
+            this.brokerController.getBrokerClusterService().getSlaveSynchronize().setMasterAddr(null);
         }
     }
 

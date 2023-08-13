@@ -317,19 +317,20 @@ public class DefaultMappedFile extends AbstractMappedFile {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
         int remaining = data.remaining();
 
-        if ((currentPos + remaining) <= this.fileSize) {
-            try {
-                this.fileChannel.position(currentPos);
-                while (data.hasRemaining()) {
-                    this.fileChannel.write(data);
-                }
-            } catch (Throwable e) {
-                log.error("Error occurred when append message to mappedFile.", e);
-            }
-            WROTE_POSITION_UPDATER.addAndGet(this, remaining);
-            return true;
+        if ((currentPos + remaining) > this.fileSize) {
+            return false;
         }
-        return false;
+
+        try {
+            this.fileChannel.position(currentPos);
+            while (data.hasRemaining()) {
+                this.fileChannel.write(data);
+            }
+        } catch (Throwable e) {
+            log.error("Error occurred when append message to mappedFile.", e);
+        }
+        WROTE_POSITION_UPDATER.addAndGet(this, remaining);
+        return true;
     }
 
     /**
@@ -362,31 +363,34 @@ public class DefaultMappedFile extends AbstractMappedFile {
      */
     @Override
     public int flush(final int flushLeastPages) {
-        if (this.isAbleToFlush(flushLeastPages)) {
-            if (this.hold()) {
-                int value = getReadPosition();
-
-                try {
-                    this.mappedByteBufferAccessCountSinceLastSwap++;
-
-                    //We only append data to fileChannel or mappedByteBuffer, never both.
-                    if (writeBuffer != null || this.fileChannel.position() != 0) {
-                        this.fileChannel.force(false);
-                    } else {
-                        this.mappedByteBuffer.force();
-                    }
-                    this.lastFlushTime = System.currentTimeMillis();
-                } catch (Throwable e) {
-                    log.error("Error occurred when force data to disk.", e);
-                }
-
-                FLUSHED_POSITION_UPDATER.set(this, value);
-                this.release();
-            } else {
-                log.warn("in flush, hold failed, flush offset = " + FLUSHED_POSITION_UPDATER.get(this));
-                FLUSHED_POSITION_UPDATER.set(this, getReadPosition());
-            }
+        if (!this.isAbleToFlush(flushLeastPages)) {
+            return this.getFlushedPosition();
         }
+        if (!this.hold()) {
+            log.warn("in flush, hold failed, flush offset = " + FLUSHED_POSITION_UPDATER.get(this));
+            FLUSHED_POSITION_UPDATER.set(this, getReadPosition());
+
+            return this.getFlushedPosition();
+        }
+
+        int value = getReadPosition();
+        try {
+            this.mappedByteBufferAccessCountSinceLastSwap++;
+
+            //We only append data to fileChannel or mappedByteBuffer, never both.
+            if (writeBuffer != null || this.fileChannel.position() != 0) {
+                this.fileChannel.force(false);
+            } else {
+                this.mappedByteBuffer.force();
+            }
+            this.lastFlushTime = System.currentTimeMillis();
+        } catch (Throwable e) {
+            log.error("Error occurred when force data to disk.", e);
+        }
+
+        FLUSHED_POSITION_UPDATER.set(this, value);
+        this.release();
+
         return this.getFlushedPosition();
     }
 

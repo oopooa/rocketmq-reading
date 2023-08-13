@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+
+import org.apache.rocketmq.common.utils.IOTinyUtils;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -272,7 +274,7 @@ public class UtilAllTest {
         assertEquals(1313 * 4, UtilAll.calculateFileSizeInPath(baseFile));
 
         // clear all file
-        baseFile.deleteOnExit();
+        IOTinyUtils.delete(baseFile);
     }
 
     private void writeFixedBytesToFile(File file, int size) throws Exception {

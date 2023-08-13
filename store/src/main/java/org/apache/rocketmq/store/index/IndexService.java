@@ -58,34 +58,40 @@ public class IndexService {
     public boolean load(final boolean lastExitOK) {
         File dir = new File(this.storePath);
         File[] files = dir.listFiles();
-        if (files != null) {
-            // ascending order
-            Arrays.sort(files);
-            for (File file : files) {
-                try {
-                    IndexFile f = new IndexFile(file.getPath(), this.hashSlotNum, this.indexNum, 0, 0);
-                    f.load();
+        if (files == null) {
+            return true;
+        }
 
-                    if (!lastExitOK) {
-                        if (f.getEndTimestamp() > this.defaultMessageStore.getStoreCheckpoint()
-                            .getIndexMsgTimestamp()) {
-                            f.destroy(0);
-                            continue;
-                        }
-                    }
-
-                    LOGGER.info("load index file OK, " + f.getFileName());
-                    this.indexFileList.add(f);
-                } catch (IOException e) {
-                    LOGGER.error("load file {} error", file, e);
-                    return false;
-                } catch (NumberFormatException e) {
-                    LOGGER.error("load file {} error", file, e);
-                }
+        // ascending order
+        Arrays.sort(files);
+        for (File file : files) {
+            try {
+                loadFile(file, lastExitOK);
+            } catch (IOException e) {
+                LOGGER.error("load file {} error", file, e);
+                return false;
+            } catch (NumberFormatException e) {
+                LOGGER.error("load file {} error", file, e);
             }
         }
 
         return true;
+    }
+
+    private void loadFile(File file, final boolean lastExitOK) throws IOException {
+        IndexFile f = new IndexFile(file.getPath(), this.hashSlotNum, this.indexNum, 0, 0);
+        f.load();
+
+        if (!lastExitOK) {
+            if (f.getEndTimestamp() > this.defaultMessageStore.getStoreCheckpoint()
+                .getIndexMsgTimestamp()) {
+                f.destroy(0);
+                return;
+            }
+        }
+
+        LOGGER.info("load index file OK, " + f.getFileName());
+        this.indexFileList.add(f);
     }
 
     public long getTotalSize() {
@@ -130,22 +136,24 @@ public class IndexService {
     }
 
     private void deleteExpiredFile(List<IndexFile> files) {
-        if (!files.isEmpty()) {
-            try {
-                this.readWriteLock.writeLock().lock();
-                for (IndexFile file : files) {
-                    boolean destroyed = file.destroy(3000);
-                    destroyed = destroyed && this.indexFileList.remove(file);
-                    if (!destroyed) {
-                        LOGGER.error("deleteExpiredFile remove failed.");
-                        break;
-                    }
+        if (files.isEmpty()) {
+            return;
+        }
+
+        try {
+            this.readWriteLock.writeLock().lock();
+            for (IndexFile file : files) {
+                boolean destroyed = file.destroy(3000);
+                destroyed = destroyed && this.indexFileList.remove(file);
+                if (!destroyed) {
+                    LOGGER.error("deleteExpiredFile remove failed.");
+                    break;
                 }
-            } catch (Exception e) {
-                LOGGER.error("deleteExpiredFile has exception.", e);
-            } finally {
-                this.readWriteLock.writeLock().unlock();
             }
+        } catch (Exception e) {
+            LOGGER.error("deleteExpiredFile has exception.", e);
+        } finally {
+            this.readWriteLock.writeLock().unlock();
         }
     }
 
@@ -209,48 +217,53 @@ public class IndexService {
 
     public void buildIndex(DispatchRequest req) {
         IndexFile indexFile = retryGetAndCreateIndexFile();
-        if (indexFile != null) {
-            long endPhyOffset = indexFile.getEndPhyOffset();
-            DispatchRequest msg = req;
-            String topic = msg.getTopic();
-            String keys = msg.getKeys();
-            if (msg.getCommitLogOffset() < endPhyOffset) {
+        if (indexFile == null) {
+            LOGGER.error("build index error, stop building index");
+            return;
+        }
+
+        long endPhyOffset = indexFile.getEndPhyOffset();
+        DispatchRequest msg = req;
+        String topic = msg.getTopic();
+        String keys = msg.getKeys();
+        if (msg.getCommitLogOffset() < endPhyOffset) {
+            return;
+        }
+
+        final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
+        switch (tranType) {
+            case MessageSysFlag.TRANSACTION_NOT_TYPE:
+            case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
+            case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
+                break;
+            case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:
+                return;
+        }
+
+        if (req.getUniqKey() != null) {
+            indexFile = putKey(indexFile, msg, buildKey(topic, req.getUniqKey()));
+            if (indexFile == null) {
+                LOGGER.error("putKey error commitlog {} uniqkey {}", req.getCommitLogOffset(), req.getUniqKey());
                 return;
             }
+        }
 
-            final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
-            switch (tranType) {
-                case MessageSysFlag.TRANSACTION_NOT_TYPE:
-                case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
-                case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
-                    break;
-                case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:
-                    return;
+        if (keys == null || keys.length() <= 0) {
+            return;
+        }
+
+        String[] keyset = keys.split(MessageConst.KEY_SEPARATOR);
+        for (int i = 0; i < keyset.length; i++) {
+            String key = keyset[i];
+            if (key.length() <= 0) {
+                continue;
             }
 
-            if (req.getUniqKey() != null) {
-                indexFile = putKey(indexFile, msg, buildKey(topic, req.getUniqKey()));
-                if (indexFile == null) {
-                    LOGGER.error("putKey error commitlog {} uniqkey {}", req.getCommitLogOffset(), req.getUniqKey());
-                    return;
-                }
+            indexFile = putKey(indexFile, msg, buildKey(topic, key));
+            if (indexFile == null) {
+                LOGGER.error("putKey error commitlog {} uniqkey {}", req.getCommitLogOffset(), req.getUniqKey());
+                return;
             }
-
-            if (keys != null && keys.length() > 0) {
-                String[] keyset = keys.split(MessageConst.KEY_SEPARATOR);
-                for (int i = 0; i < keyset.length; i++) {
-                    String key = keyset[i];
-                    if (key.length() > 0) {
-                        indexFile = putKey(indexFile, msg, buildKey(topic, key));
-                        if (indexFile == null) {
-                            LOGGER.error("putKey error commitlog {} uniqkey {}", req.getCommitLogOffset(), req.getUniqKey());
-                            return;
-                        }
-                    }
-                }
-            }
-        } else {
-            LOGGER.error("build index error, stop building index");
         }
     }
 

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.concurrent.Executors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.bootstrap.BrokerNettyServer;
 import org.apache.rocketmq.broker.processor.PullMessageProcessor;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
@@ -63,6 +64,9 @@ public class PullRequestHoldServiceTest {
     @Mock
     private Channel channel;
 
+    @Mock
+    private BrokerNettyServer brokerNettyServer;
+
     private SubscriptionData subscriptionData;
 
     private static final String TEST_TOPIC = "TEST_TOPIC";
@@ -74,8 +78,9 @@ public class PullRequestHoldServiceTest {
     @Before
     public void before() {
         when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
-        when(brokerController.getPullMessageProcessor()).thenReturn(new PullMessageProcessor(brokerController));
-        when(brokerController.getPullMessageExecutor()).thenReturn(Executors.newCachedThreadPool());
+        when(brokerController.getBrokerNettyServer()).thenReturn(brokerNettyServer);
+        when(brokerController.getBrokerNettyServer().getPullMessageProcessor()).thenReturn(new PullMessageProcessor(brokerController));
+        when(brokerController.getBrokerNettyServer().getPullMessageExecutor()).thenReturn(Executors.newCachedThreadPool());
         pullRequestHoldService = new PullRequestHoldService(brokerController);
         subscriptionData = new SubscriptionData(TEST_TOPIC, "*");
         pullRequest = new PullRequest(remotingCommand, channel, 3000, 3000, 0L, subscriptionData, defaultMessageFilter);

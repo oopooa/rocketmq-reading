@@ -20,6 +20,7 @@ package org.apache.rocketmq.broker.offset;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.rocketmq.broker.BrokerController;
+import org.apache.rocketmq.broker.bootstrap.BrokerNettyServer;
 import org.apache.rocketmq.broker.processor.PopMessageProcessor;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.assertj.core.util.Lists;
@@ -48,13 +49,14 @@ public class ConsumerOrderInfoManagerLockFreeNotifyTest {
     private final BrokerConfig brokerConfig = new BrokerConfig();
     private final PopMessageProcessor popMessageProcessor = mock(PopMessageProcessor.class);
     private final BrokerController brokerController = mock(BrokerController.class);
-
+    private final BrokerNettyServer brokerNettyServer = mock(BrokerNettyServer.class);
     @Before
     public void before() {
         notified = new AtomicBoolean(false);
         brokerConfig.setEnableNotifyAfterPopOrderLockRelease(true);
+        when(brokerController.getBrokerNettyServer()).thenReturn(brokerNettyServer);
         when(brokerController.getBrokerConfig()).thenReturn(brokerConfig);
-        when(brokerController.getPopMessageProcessor()).thenReturn(popMessageProcessor);
+        when(brokerController.getBrokerNettyServer().getPopMessageProcessor()).thenReturn(popMessageProcessor);
         doAnswer((Answer<Void>) mock -> {
             notified.set(true);
             return null;

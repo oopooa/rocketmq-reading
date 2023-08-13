@@ -450,9 +450,9 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         try {
             this.brokerController.getTopicConfigManager().updateTopicConfig(topicConfig);
             if (brokerController.getBrokerConfig().isEnableSingleTopicRegister()) {
-                this.brokerController.registerSingleTopicAll(topicConfig);
+                this.brokerController.getBrokerServiceRegistry().registerSingleTopicAll(topicConfig);
             } else {
-                this.brokerController.registerIncrementBrokerData(topicConfig, this.brokerController.getTopicConfigManager().getDataVersion());
+                this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, this.brokerController.getTopicConfigManager().getDataVersion());
             }
             response.setCode(ResponseCode.SUCCESS);
         } catch (Exception e) {
@@ -505,7 +505,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
             this.brokerController.getTopicQueueMappingManager().updateTopicQueueMapping(topicQueueMappingDetail, force, false, true);
 
-            this.brokerController.registerIncrementBrokerData(topicConfig, this.brokerController.getTopicConfigManager().getDataVersion());
+            this.brokerController.getBrokerServiceRegistry().registerIncrementBrokerData(topicConfig, this.brokerController.getTopicConfigManager().getDataVersion());
             response.setCode(ResponseCode.SUCCESS);
         } catch (Exception e) {
             LOGGER.error("Update static topic failed for [{}]", request, e);
@@ -932,7 +932,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
                     if (properties.containsKey("brokerPermission")) {
                         long stateMachineVersion = brokerController.getMessageStore() != null ? brokerController.getMessageStore().getStateMachineVersion() : 0;
                         this.brokerController.getTopicConfigManager().getDataVersion().nextVersion(stateMachineVersion);
-                        this.brokerController.registerBrokerAll(false, false, true);
+                        this.brokerController.getBrokerServiceRegistry().registerBrokerAll(false, false, true);
                     }
 
                 } else {
@@ -1274,7 +1274,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         LockBatchRequestBody requestBody = LockBatchRequestBody.decode(request.getBody(), LockBatchRequestBody.class);
 
         Set<MessageQueue> lockOKMQSet = new HashSet<>();
-        Set<MessageQueue> selfLockOKMQSet = this.brokerController.getRebalanceLockManager().tryLockBatch(
+        Set<MessageQueue> selfLockOKMQSet = this.brokerController.getBrokerClusterService().getRebalanceLockManager().tryLockBatch(
             requestBody.getConsumerGroup(),
             requestBody.getMqSet(),
             requestBody.getClientId());
@@ -1361,7 +1361,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
         UnlockBatchRequestBody requestBody = UnlockBatchRequestBody.decode(request.getBody(), UnlockBatchRequestBody.class);
 
         if (requestBody.isOnlyThisBroker() || !this.brokerController.getBrokerConfig().isLockInStrictMode()) {
-            this.brokerController.getRebalanceLockManager().unlockBatch(
+            this.brokerController.getBrokerClusterService().getRebalanceLockManager().unlockBatch(
                 requestBody.getConsumerGroup(),
                 requestBody.getMqSet(),
                 requestBody.getClientId());
@@ -1786,7 +1786,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     private RemotingCommand getAllMessageRequestMode(ChannelHandlerContext ctx, RemotingCommand request) {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
 
-        String content = this.brokerController.getQueryAssignmentProcessor().getMessageRequestModeManager().encode();
+        String content = this.brokerController.getBrokerNettyServer().getQueryAssignmentProcessor().getMessageRequestModeManager().encode();
         if (content != null && content.length() > 0) {
             try {
                 response.setBody(content.getBytes(MixAll.DEFAULT_CHARSET));
@@ -2372,26 +2372,26 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     private HashMap<String, String> prepareRuntimeInfo() {
         HashMap<String, String> runtimeInfo = this.brokerController.getMessageStore().getRuntimeInfo();
 
-        for (BrokerAttachedPlugin brokerAttachedPlugin : brokerController.getBrokerAttachedPlugins()) {
+        for (BrokerAttachedPlugin brokerAttachedPlugin : brokerController.getBrokerServiceManager().getBrokerAttachedPlugins()) {
             if (brokerAttachedPlugin != null) {
                 brokerAttachedPlugin.buildRuntimeInfo(runtimeInfo);
             }
         }
 
         this.brokerController.getScheduleMessageService().buildRunningStats(runtimeInfo);
-        runtimeInfo.put("brokerActive", String.valueOf(this.brokerController.isSpecialServiceRunning()));
+        runtimeInfo.put("brokerActive", String.valueOf(this.brokerController.getBrokerMessageService().isSpecialServiceRunning()));
         runtimeInfo.put("brokerVersionDesc", MQVersion.getVersionDesc(MQVersion.CURRENT_VERSION));
         runtimeInfo.put("brokerVersion", String.valueOf(MQVersion.CURRENT_VERSION));
 
         runtimeInfo.put("msgPutTotalYesterdayMorning",
-            String.valueOf(this.brokerController.getBrokerStats().getMsgPutTotalYesterdayMorning()));
-        runtimeInfo.put("msgPutTotalTodayMorning", String.valueOf(this.brokerController.getBrokerStats().getMsgPutTotalTodayMorning()));
-        runtimeInfo.put("msgPutTotalTodayNow", String.valueOf(this.brokerController.getBrokerStats().getMsgPutTotalTodayNow()));
+            String.valueOf(this.brokerController.getBrokerServiceManager().getBrokerStats().getMsgPutTotalYesterdayMorning()));
+        runtimeInfo.put("msgPutTotalTodayMorning", String.valueOf(this.brokerController.getBrokerServiceManager().getBrokerStats().getMsgPutTotalTodayMorning()));
+        runtimeInfo.put("msgPutTotalTodayNow", String.valueOf(this.brokerController.getBrokerServiceManager().getBrokerStats().getMsgPutTotalTodayNow()));
 
         runtimeInfo.put("msgGetTotalYesterdayMorning",
-            String.valueOf(this.brokerController.getBrokerStats().getMsgGetTotalYesterdayMorning()));
-        runtimeInfo.put("msgGetTotalTodayMorning", String.valueOf(this.brokerController.getBrokerStats().getMsgGetTotalTodayMorning()));
-        runtimeInfo.put("msgGetTotalTodayNow", String.valueOf(this.brokerController.getBrokerStats().getMsgGetTotalTodayNow()));
+            String.valueOf(this.brokerController.getBrokerServiceManager().getBrokerStats().getMsgGetTotalYesterdayMorning()));
+        runtimeInfo.put("msgGetTotalTodayMorning", String.valueOf(this.brokerController.getBrokerServiceManager().getBrokerStats().getMsgGetTotalTodayMorning()));
+        runtimeInfo.put("msgGetTotalTodayNow", String.valueOf(this.brokerController.getBrokerServiceManager().getBrokerStats().getMsgGetTotalTodayNow()));
 
         runtimeInfo.put("dispatchBehindBytes", String.valueOf(this.brokerController.getMessageStore().dispatchBehindBytes()));
         runtimeInfo.put("pageCacheLockTimeMills", String.valueOf(this.brokerController.getMessageStore().lockTimeMills()));
@@ -2424,28 +2424,28 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
             runtimeInfo.put("commitLogDirCapacity", String.format("Total : %s, Free : %s.", MixAll.humanReadableByteCount(commitLogDir.getTotalSpace(), false), MixAll.humanReadableByteCount(commitLogDir.getFreeSpace(), false)));
         }
 
-        runtimeInfo.put("sendThreadPoolQueueSize", String.valueOf(this.brokerController.getSendThreadPoolQueue().size()));
+        runtimeInfo.put("sendThreadPoolQueueSize", String.valueOf(this.brokerController.getBrokerNettyServer().getSendThreadPoolQueue().size()));
         runtimeInfo.put("sendThreadPoolQueueCapacity",
             String.valueOf(this.brokerController.getBrokerConfig().getSendThreadPoolQueueCapacity()));
 
-        runtimeInfo.put("pullThreadPoolQueueSize", String.valueOf(this.brokerController.getPullThreadPoolQueue().size()));
+        runtimeInfo.put("pullThreadPoolQueueSize", String.valueOf(this.brokerController.getBrokerNettyServer().getPullThreadPoolQueue().size()));
         runtimeInfo.put("pullThreadPoolQueueCapacity",
             String.valueOf(this.brokerController.getBrokerConfig().getPullThreadPoolQueueCapacity()));
 
-        runtimeInfo.put("litePullThreadPoolQueueSize", String.valueOf(brokerController.getLitePullThreadPoolQueue().size()));
+        runtimeInfo.put("litePullThreadPoolQueueSize", String.valueOf(brokerController.getBrokerNettyServer().getLitePullThreadPoolQueue().size()));
         runtimeInfo.put("litePullThreadPoolQueueCapacity",
             String.valueOf(this.brokerController.getBrokerConfig().getLitePullThreadPoolQueueCapacity()));
 
-        runtimeInfo.put("queryThreadPoolQueueSize", String.valueOf(this.brokerController.getQueryThreadPoolQueue().size()));
+        runtimeInfo.put("queryThreadPoolQueueSize", String.valueOf(this.brokerController.getBrokerNettyServer().getQueryThreadPoolQueue().size()));
         runtimeInfo.put("queryThreadPoolQueueCapacity",
             String.valueOf(this.brokerController.getBrokerConfig().getQueryThreadPoolQueueCapacity()));
 
-        runtimeInfo.put("sendThreadPoolQueueHeadWaitTimeMills", String.valueOf(this.brokerController.headSlowTimeMills4SendThreadPoolQueue()));
-        runtimeInfo.put("pullThreadPoolQueueHeadWaitTimeMills", String.valueOf(brokerController.headSlowTimeMills4PullThreadPoolQueue()));
-        runtimeInfo.put("queryThreadPoolQueueHeadWaitTimeMills", String.valueOf(this.brokerController.headSlowTimeMills4QueryThreadPoolQueue()));
-        runtimeInfo.put("litePullThreadPoolQueueHeadWaitTimeMills", String.valueOf(brokerController.headSlowTimeMills4LitePullThreadPoolQueue()));
+        runtimeInfo.put("sendThreadPoolQueueHeadWaitTimeMills", String.valueOf(this.brokerController.getBrokerNettyServer().headSlowTimeMills4SendThreadPoolQueue()));
+        runtimeInfo.put("pullThreadPoolQueueHeadWaitTimeMills", String.valueOf(brokerController.getBrokerNettyServer().headSlowTimeMills4PullThreadPoolQueue()));
+        runtimeInfo.put("queryThreadPoolQueueHeadWaitTimeMills", String.valueOf(this.brokerController.getBrokerNettyServer().headSlowTimeMills4QueryThreadPoolQueue()));
+        runtimeInfo.put("litePullThreadPoolQueueHeadWaitTimeMills", String.valueOf(brokerController.getBrokerNettyServer().headSlowTimeMills4LitePullThreadPoolQueue()));
 
-        runtimeInfo.put("EndTransactionQueueSize", String.valueOf(this.brokerController.getEndTransactionThreadPoolQueue().size()));
+        runtimeInfo.put("EndTransactionQueueSize", String.valueOf(this.brokerController.getBrokerNettyServer().getEndTransactionThreadPoolQueue().size()));
         runtimeInfo.put("EndTransactionThreadPoolQueueCapacity",
             String.valueOf(this.brokerController.getBrokerConfig().getEndTransactionPoolQueueCapacity()));
 
@@ -2676,7 +2676,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         LOGGER.warn("min broker id changed, prev {}, new {}", this.brokerController.getMinBrokerIdInGroup(), requestHeader.getMinBrokerId());
 
-        this.brokerController.updateMinBroker(requestHeader.getMinBrokerId(), requestHeader.getMinBrokerAddr(),
+        this.brokerController.getBrokerClusterService().updateMinBroker(requestHeader.getMinBrokerId(), requestHeader.getMinBrokerAddr(),
             requestHeader.getOfflineBrokerAddr(),
             requestHeader.getHaBrokerAddr());
 
@@ -2731,7 +2731,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
     }
 
     private RemotingCommand getBrokerEpochCache(ChannelHandlerContext ctx, RemotingCommand request) {
-        final ReplicasManager replicasManager = this.brokerController.getReplicasManager();
+        final ReplicasManager replicasManager = this.brokerController.getBrokerClusterService().getReplicasManager();
         assert replicasManager != null;
         final BrokerConfig brokerConfig = this.brokerController.getBrokerConfig();
         final EpochEntryCache entryCache = new EpochEntryCache(brokerConfig.getBrokerClusterName(),
@@ -2771,7 +2771,7 @@ public class AdminBrokerProcessor implements NettyRequestProcessor {
 
         LOGGER.info("Receive notifyBrokerRoleChanged request, try to change brokerRole, request:{}", requestHeader);
 
-        final ReplicasManager replicasManager = this.brokerController.getReplicasManager();
+        final ReplicasManager replicasManager = this.brokerController.getBrokerClusterService().getReplicasManager();
         if (replicasManager != null) {
             replicasManager.changeBrokerRole(requestHeader.getMasterBrokerId(), requestHeader.getMasterAddress(), requestHeader.getMasterEpoch(), requestHeader.getSyncStateSetEpoch(), syncStateSetInfo.getSyncStateSet());
         }
