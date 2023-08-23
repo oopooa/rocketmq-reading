@@ -53,6 +53,13 @@ public class ReplyMessageRequestHeader implements CommandCustomHeader {
     @CFNotNull
     private long storeTimestamp;
 
+    @CFNotNull
+    private String consumerGroup;
+    @CFNotNull
+    private String consumerResult;
+    @CFNotNull
+    private long consumerTimeStamp;
+
     public void checkFields() throws RemotingCommandException {
     }
 
@@ -166,5 +173,29 @@ public class ReplyMessageRequestHeader implements CommandCustomHeader {
 
     public void setStoreTimestamp(long storeTimestamp) {
         this.storeTimestamp = storeTimestamp;
+    }
+
+    public String getConsumerGroup() {
+        return consumerGroup;
+    }
+
+    public void setConsumerGroup(String consumerGroup) {
+        this.consumerGroup = consumerGroup;
+    }
+
+    public String getConsumerResult() {
+        return consumerResult;
+    }
+
+    public void setConsumerResult(String consumerResult) {
+        this.consumerResult = consumerResult;
+    }
+
+    public long getConsumerTimeStamp() {
+        return consumerTimeStamp;
+    }
+
+    public void setConsumerTimeStamp(long consumerTimeStamp) {
+        this.consumerTimeStamp = consumerTimeStamp;
     }
 }

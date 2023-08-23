@@ -279,9 +279,9 @@ public class BrokerConfig extends BrokerIdentity {
     @ImportantField
     private boolean aclEnable = false;
 
-    private boolean storeReplyMessageEnable = true;
-
     private boolean enableDetailStat = true;
+
+    private boolean storeReplyMessageEnable = true;
 
     private boolean autoDeleteUnusedStats = false;
 
@@ -1156,20 +1156,20 @@ public class BrokerConfig extends BrokerIdentity {
         this.aclEnable = aclEnable;
     }
 
-    public boolean isStoreReplyMessageEnable() {
-        return storeReplyMessageEnable;
-    }
-
-    public void setStoreReplyMessageEnable(boolean storeReplyMessageEnable) {
-        this.storeReplyMessageEnable = storeReplyMessageEnable;
-    }
-
     public boolean isEnableDetailStat() {
         return enableDetailStat;
     }
 
     public void setEnableDetailStat(boolean enableDetailStat) {
         this.enableDetailStat = enableDetailStat;
+    }
+
+    public boolean isStoreReplyMessageEnable() {
+        return storeReplyMessageEnable;
+    }
+
+    public void setStoreReplyMessageEnable(boolean storeReplyMessageEnable) {
+        this.storeReplyMessageEnable = storeReplyMessageEnable;
     }
 
     public boolean isAutoDeleteUnusedStats() {

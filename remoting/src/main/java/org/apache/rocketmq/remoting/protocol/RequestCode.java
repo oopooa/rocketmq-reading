@@ -209,6 +209,8 @@ public class RequestCode {
 
     public static final int ADD_WRITE_PERM_OF_BROKER = 327;
 
+    public static final int SEND_REPLY_MESSAGE_V3 = 330;
+
     public static final int GET_TOPIC_CONFIG = 351;
 
     public static final int GET_SUBSCRIPTIONGROUP_CONFIG = 352;
