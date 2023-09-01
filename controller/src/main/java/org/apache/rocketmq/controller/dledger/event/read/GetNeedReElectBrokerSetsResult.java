@@ -14,15 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.controller.impl.event;
 
-/**
- * The parent class of Event, the subclass needs to indicate eventType.
- */
-public interface EventMessage {
+package org.apache.rocketmq.controller.dledger.event.read;
 
-    /**
-     * Returns the event type of this message
-     */
-    EventType getEventType();
+public class GetNeedReElectBrokerSetsResult implements ReadEventResult {
+    @Override
+    public ReadEventType getEventType() {
+        return ReadEventType.GET_NEED_RE_ELECT_BROKER_SETS;
+    }
 }

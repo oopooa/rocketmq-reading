@@ -18,8 +18,10 @@ package org.apache.rocketmq.controller;
 
 import io.netty.channel.Channel;
 import java.util.Map;
+import java.util.Set;
+import org.apache.rocketmq.controller.heartbeat.BrokerSetIdentity;
 import org.apache.rocketmq.controller.helper.BrokerLifecycleListener;
-import org.apache.rocketmq.controller.impl.heartbeat.BrokerLiveInfo;
+import org.apache.rocketmq.controller.heartbeat.BrokerLiveInfo;
 
 public interface BrokerHeartbeatManager {
 
@@ -69,5 +71,13 @@ public interface BrokerHeartbeatManager {
      * Count the number of active brokers in each broker-set of each cluster
      * @return active brokers count
      */
-    Map<String/*cluster*/, Map<String/*broker-set*/, Integer/*active broker num*/>> getActiveBrokersNum();
+    Map<BrokerSetIdentity, Integer/*brokers num*/> getActiveBrokersNum();
+
+    /**
+     * Get all active broker ids for target broker-set
+     * @param clusterName cluster name
+     * @param brokerName broker name
+     * @return broker id set which is active
+     */
+    Set<Long> getActiveBrokerIds(String clusterName, String brokerName);
 }

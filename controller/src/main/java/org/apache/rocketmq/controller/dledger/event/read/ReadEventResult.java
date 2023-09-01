@@ -14,26 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.controller.elect;
 
+package org.apache.rocketmq.controller.dledger.event.read;
 
-import java.util.Map;
-import java.util.Set;
-import org.apache.rocketmq.controller.heartbeat.BrokerLiveInfo;
+import org.apache.rocketmq.controller.dledger.event.EventResult;
 
-public interface ElectPolicy {
-
+public interface ReadEventResult extends EventResult {
     /**
-     * elect a master
-     *
-     * @param syncStateBrokers        all broker replicas in syncStateSet
-     * @param allReplicaBrokers       all broker replicas
-     * @param aliveReplicaBrokersInfo all alive broker replicas info
-     * @param oldMaster               old master
-     * @param extraBrokerId           an extra broker id(can be used as prefer or assigned in some elect policy)
-     * @return new master's broker id
+     * Returns the event type of this result
      */
-    Long elect(Set<Long> syncStateBrokers, Set<Long> allReplicaBrokers, Map<Long/*broker id*/, BrokerLiveInfo> aliveReplicaBrokersInfo,
-        Long oldMaster, Long extraBrokerId);
-
+    ReadEventType getEventType();
 }

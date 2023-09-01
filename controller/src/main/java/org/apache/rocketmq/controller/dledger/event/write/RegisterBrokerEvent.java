@@ -14,32 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.controller.impl.event;
 
-/**
- * The event trys to apply a new id for a new broker.
- * Triggered by the RegisterBrokerApi.
- */
-public class ApplyBrokerIdEvent implements EventMessage {
+package org.apache.rocketmq.controller.dledger.event.write;
+
+public class RegisterBrokerEvent implements WriteEventMessage {
+
     private final String clusterName;
     private final String brokerName;
     private final String brokerAddress;
+    private final Long brokerId;
 
-    private final String registerCheckCode;
-
-    private final long newBrokerId;
-
-    public ApplyBrokerIdEvent(String clusterName, String brokerName, String brokerAddress, long newBrokerId, String registerCheckCode) {
+    public RegisterBrokerEvent(String clusterName, String brokerName, String brokerAddress, Long brokerId) {
         this.clusterName = clusterName;
         this.brokerName = brokerName;
         this.brokerAddress = brokerAddress;
-        this.newBrokerId = newBrokerId;
-        this.registerCheckCode = registerCheckCode;
+        this.brokerId = brokerId;
     }
 
-    @Override
-    public EventType getEventType() {
-        return EventType.APPLY_BROKER_ID_EVENT;
+    public String getClusterName() {
+        return clusterName;
     }
 
     public String getBrokerName() {
@@ -50,26 +43,12 @@ public class ApplyBrokerIdEvent implements EventMessage {
         return brokerAddress;
     }
 
-    public long getNewBrokerId() {
-        return newBrokerId;
-    }
-
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    public String getRegisterCheckCode() {
-        return registerCheckCode;
+    public Long getBrokerId() {
+        return brokerId;
     }
 
     @Override
-    public String toString() {
-        return "ApplyBrokerIdEvent{" +
-                "clusterName='" + clusterName + '\'' +
-                ", brokerName='" + brokerName + '\'' +
-                ", brokerAddress='" + brokerAddress + '\'' +
-                ", registerCheckCode='" + registerCheckCode + '\'' +
-                ", newBrokerId=" + newBrokerId +
-                '}';
+    public WriteEventType getEventType() {
+        return WriteEventType.REGISTER_BROKER;
     }
 }

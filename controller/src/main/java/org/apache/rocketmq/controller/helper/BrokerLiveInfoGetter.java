@@ -17,7 +17,7 @@
 
 package org.apache.rocketmq.controller.helper;
 
-import org.apache.rocketmq.controller.impl.heartbeat.BrokerLiveInfo;
+import org.apache.rocketmq.controller.heartbeat.BrokerLiveInfo;
 
 public interface BrokerLiveInfoGetter {
 

@@ -15,19 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.controller.impl.event;
+package org.apache.rocketmq.controller.heartbeat;
 
-import java.util.Set;
+import java.util.Objects;
 
-public class CleanBrokerDataEvent implements EventMessage {
-
+public class BrokerSetIdentity {
+    private String clusterName;
     private String brokerName;
 
-    private Set<Long> brokerIdSetToClean;
-
-    public CleanBrokerDataEvent(String brokerName, Set<Long> brokerIdSetToClean) {
+    public BrokerSetIdentity(String clusterName, String brokerName) {
+        this.clusterName = clusterName;
         this.brokerName = brokerName;
-        this.brokerIdSetToClean = brokerIdSetToClean;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
     }
 
     public String getBrokerName() {
@@ -38,27 +44,26 @@ public class CleanBrokerDataEvent implements EventMessage {
         this.brokerName = brokerName;
     }
 
-    public void setBrokerIdSetToClean(Set<Long> brokerIdSetToClean) {
-        this.brokerIdSetToClean = brokerIdSetToClean;
-    }
-
-    public Set<Long> getBrokerIdSetToClean() {
-        return brokerIdSetToClean;
-    }
-
-    /**
-     * Returns the event type of this message
-     */
-    @Override
-    public EventType getEventType() {
-        return EventType.CLEAN_BROKER_DATA_EVENT;
-    }
-
     @Override
     public String toString() {
-        return "CleanBrokerDataEvent{" +
-                "brokerName='" + brokerName + '\'' +
-                ", brokerIdSetToClean=" + brokerIdSetToClean +
-                '}';
+        return "BrokerSetIdentity{" +
+            "clusterName='" + clusterName + '\'' +
+            ", brokerName='" + brokerName + '\'' +
+            '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        BrokerSetIdentity identity = (BrokerSetIdentity) o;
+        return Objects.equals(clusterName, identity.clusterName) && Objects.equals(brokerName, identity.brokerName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(clusterName, brokerName);
     }
 }

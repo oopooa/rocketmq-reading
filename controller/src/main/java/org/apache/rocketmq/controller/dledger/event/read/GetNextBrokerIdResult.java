@@ -15,23 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.rocketmq.controller.impl.event;
+package org.apache.rocketmq.controller.dledger.event.read;
 
-public class UpdateBrokerAddressEvent implements EventMessage {
+public class GetNextBrokerIdResult implements ReadEventResult {
 
-    private String clusterName;
+    private final String clusterName;
 
-    private String brokerName;
+    private final String brokerName;
 
-    private String brokerAddress;
+    private final Long nextBrokerId;
 
-    private Long brokerId;
-
-    public UpdateBrokerAddressEvent(String clusterName, String brokerName, String brokerAddress, Long brokerId) {
+    public GetNextBrokerIdResult(String clusterName, String brokerName, Long nextBrokerId) {
         this.clusterName = clusterName;
         this.brokerName = brokerName;
-        this.brokerAddress = brokerAddress;
-        this.brokerId = brokerId;
+        this.nextBrokerId = nextBrokerId;
+    }
+
+    public Long getNextBrokerId() {
+        return nextBrokerId;
     }
 
     public String getClusterName() {
@@ -42,26 +43,8 @@ public class UpdateBrokerAddressEvent implements EventMessage {
         return brokerName;
     }
 
-    public String getBrokerAddress() {
-        return brokerAddress;
-    }
-
-    public Long getBrokerId() {
-        return brokerId;
-    }
-
     @Override
-    public String toString() {
-        return "UpdateBrokerAddressEvent{" +
-                "clusterName='" + clusterName + '\'' +
-                ", brokerName='" + brokerName + '\'' +
-                ", brokerAddress='" + brokerAddress + '\'' +
-                ", brokerId=" + brokerId +
-                '}';
-    }
-
-    @Override
-    public EventType getEventType() {
-        return EventType.UPDATE_BROKER_ADDRESS;
+    public ReadEventType getEventType() {
+        return ReadEventType.GET_NEXT_BROKER_ID;
     }
 }

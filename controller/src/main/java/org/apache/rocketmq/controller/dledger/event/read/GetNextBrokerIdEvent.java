@@ -14,43 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.rocketmq.controller.impl.event;
 
-import java.util.HashSet;
-import java.util.Set;
+package org.apache.rocketmq.controller.dledger.event.read;
 
-/**
- * The event alters the syncStateSet of target broker.
- * Triggered by the AlterSyncStateSetApi.
- */
-public class AlterSyncStateSetEvent implements EventMessage {
+public class GetNextBrokerIdEvent implements ReadEventMessage {
+
+    private final String clusterName;
 
     private final String brokerName;
-    private final Set<Long/*BrokerId*/> newSyncStateSet;
 
-    public AlterSyncStateSetEvent(String brokerName, Set<Long> newSyncStateSet) {
+    public GetNextBrokerIdEvent(String clusterName, String brokerName) {
+        this.clusterName = clusterName;
         this.brokerName = brokerName;
-        this.newSyncStateSet = new HashSet<>(newSyncStateSet);
     }
 
-    @Override
-    public EventType getEventType() {
-        return EventType.ALTER_SYNC_STATE_SET_EVENT;
+    public String getClusterName() {
+        return clusterName;
     }
 
     public String getBrokerName() {
         return brokerName;
     }
 
-    public Set<Long> getNewSyncStateSet() {
-        return new HashSet<>(newSyncStateSet);
-    }
-
     @Override
-    public String toString() {
-        return "AlterSyncStateSetEvent{" +
-            "brokerName='" + brokerName + '\'' +
-            ", newSyncStateSet=" + newSyncStateSet +
-            '}';
+    public ReadEventType getEventType() {
+        return ReadEventType.GET_NEXT_BROKER_ID;
     }
 }

@@ -1196,11 +1196,11 @@ public class BrokerOuterAPI {
      */
     public SyncStateSet alterSyncStateSet(
         final String controllerAddress,
-        final String brokerName,
+        final String clusterName, final String brokerName,
         final Long masterBrokerId, final int masterEpoch,
         final Set<Long> newSyncStateSet, final int syncStateSetEpoch) throws Exception {
 
-        final AlterSyncStateSetRequestHeader requestHeader = new AlterSyncStateSetRequestHeader(brokerName, masterBrokerId, masterEpoch);
+        final AlterSyncStateSetRequestHeader requestHeader = new AlterSyncStateSetRequestHeader(clusterName, brokerName, masterBrokerId, masterEpoch);
         final RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONTROLLER_ALTER_SYNC_STATE_SET, requestHeader);
         request.setBody(new SyncStateSet(newSyncStateSet, syncStateSetEpoch).encode());
         final RemotingCommand response = this.remotingClient.invokeSync(controllerAddress, request, 3000);
@@ -1275,8 +1275,8 @@ public class BrokerOuterAPI {
      * Get broker replica info
      */
     public Pair<GetReplicaInfoResponseHeader, SyncStateSet> getReplicaInfo(final String controllerAddress,
-        final String brokerName) throws Exception {
-        final GetReplicaInfoRequestHeader requestHeader = new GetReplicaInfoRequestHeader(brokerName);
+        final String clusterName, final String brokerName) throws Exception {
+        final GetReplicaInfoRequestHeader requestHeader = new GetReplicaInfoRequestHeader(clusterName, brokerName);
         final RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONTROLLER_GET_REPLICA_INFO, requestHeader);
         final RemotingCommand response = this.remotingClient.invokeSync(controllerAddress, request, 3000);
         assert response != null;
