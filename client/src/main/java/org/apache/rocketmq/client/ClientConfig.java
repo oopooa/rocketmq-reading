@@ -41,6 +41,7 @@ public class ClientConfig {
     public static final String SEND_LATENCY_ENABLE = "com.rocketmq.sendLatencyEnable";
     public static final String START_DETECTOR_ENABLE = "com.rocketmq.startDetectorEnable";
     public static final String HEART_BEAT_V2 = "com.rocketmq.heartbeat.v2";
+    public static final String FETCH_NAMESRV_DNS_LOOKUP = "com.rocketmq.nameserver.fetchByDns.enable";
     private String namesrvAddr = NameServerAddressUtils.getNameServerAddresses();
     private String clientIP = NetworkUtil.getLocalAddress();
     private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
@@ -84,6 +85,12 @@ public class ClientConfig {
      * And it will also generate a different client id to prevent unexpected reuses of MQClientInstance.
      */
     protected boolean enableStreamRequestType = false;
+
+    private boolean isFetchNameSrvAddrByDnsLookup = Boolean.parseBoolean(System.getProperty(FETCH_NAMESRV_DNS_LOOKUP, "false"));
+
+    private int fetchNamesrvAddrInterval = 10 * 1000;
+
+
 
     /**
      * Enable the fault tolerance mechanism of the client sending process.
@@ -203,6 +210,8 @@ public class ClientConfig {
         this.sendLatencyEnable = cc.sendLatencyEnable;
         this.detectInterval = cc.detectInterval;
         this.detectTimeout = cc.detectTimeout;
+        this.isFetchNameSrvAddrByDnsLookup = cc.isFetchNameSrvAddrByDnsLookup;
+        this.fetchNamesrvAddrInterval = cc.fetchNamesrvAddrInterval;
     }
 
     public ClientConfig cloneClientConfig() {
@@ -227,6 +236,8 @@ public class ClientConfig {
         cc.decodeDecompressBody = decodeDecompressBody;
         cc.enableStreamRequestType = enableStreamRequestType;
         cc.useHeartbeatV2 = useHeartbeatV2;
+        cc.isFetchNameSrvAddrByDnsLookup = isFetchNameSrvAddrByDnsLookup;
+        cc.fetchNamesrvAddrInterval = fetchNamesrvAddrInterval;
         cc.startDetectorEnable = startDetectorEnable;
         cc.sendLatencyEnable = sendLatencyEnable;
         cc.detectInterval = detectInterval;
@@ -235,8 +246,9 @@ public class ClientConfig {
     }
 
     public String getNamesrvAddr() {
-        if (StringUtils.isNotEmpty(namesrvAddr) && NameServerAddressUtils.NAMESRV_ENDPOINT_PATTERN.matcher(namesrvAddr.trim()).matches()) {
-            return NameServerAddressUtils.getNameSrvAddrFromNamesrvEndpoint(namesrvAddr);
+        String trimmedNamesrvAddr = namesrvAddr.trim();
+        if (StringUtils.isNotEmpty(namesrvAddr) && NameServerAddressUtils.NAMESRV_ENDPOINT_PATTERN.matcher(trimmedNamesrvAddr).matches()) {
+            return NameServerAddressUtils.getNameSrvAddrFromNamesrvEndpoint(trimmedNamesrvAddr);
         }
         return namesrvAddr;
     }
@@ -442,21 +454,38 @@ public class ClientConfig {
         this.useHeartbeatV2 = useHeartbeatV2;
     }
 
+    public boolean isFetchNameSrvAddrByDnsLookup() {
+        return isFetchNameSrvAddrByDnsLookup;
+    }
+
+    public void setFetchNameSrvAddrByDnsLookup(boolean fetchNameSrvAddrByDnsLookup) {
+        isFetchNameSrvAddrByDnsLookup = fetchNameSrvAddrByDnsLookup;
+    }
+
+    public int getFetchNamesrvAddrInterval() {
+        return fetchNamesrvAddrInterval;
+    }
+
+    public void setFetchNamesrvAddrInterval(int fetchNamesrvAddrInterval) {
+        this.fetchNamesrvAddrInterval = fetchNamesrvAddrInterval;
+    }
+
     @Override
     public String toString() {
         return "ClientConfig [namesrvAddr=" + namesrvAddr
-            + ", clientIP=" + clientIP + ", instanceName=" + instanceName
-            + ", clientCallbackExecutorThreads=" + clientCallbackExecutorThreads
-            + ", pollNameServerInterval=" + pollNameServerInterval
-            + ", heartbeatBrokerInterval=" + heartbeatBrokerInterval
-            + ", persistConsumerOffsetInterval=" + persistConsumerOffsetInterval
-            + ", pullTimeDelayMillsWhenException=" + pullTimeDelayMillsWhenException
-            + ", unitMode=" + unitMode + ", unitName=" + unitName
-            + ", vipChannelEnabled=" + vipChannelEnabled + ", useTLS=" + useTLS
-            + ", socksProxyConfig=" + socksProxyConfig + ", language=" + language.name()
-            + ", namespace=" + namespace + ", mqClientApiTimeout=" + mqClientApiTimeout
-            + ", decodeReadBody=" + decodeReadBody + ", decodeDecompressBody=" + decodeDecompressBody
-            + ", sendLatencyEnable=" + sendLatencyEnable + ", startDetectorEnable=" + startDetectorEnable
-            + ", enableStreamRequestType=" + enableStreamRequestType + ", useHeartbeatV2=" + useHeartbeatV2 + "]";
+                + ", clientIP=" + clientIP + ", instanceName=" + instanceName
+                + ", clientCallbackExecutorThreads=" + clientCallbackExecutorThreads
+                + ", pollNameServerInterval=" + pollNameServerInterval
+                + ", heartbeatBrokerInterval=" + heartbeatBrokerInterval
+                + ", persistConsumerOffsetInterval=" + persistConsumerOffsetInterval
+                + ", pullTimeDelayMillsWhenException=" + pullTimeDelayMillsWhenException
+                + ", unitMode=" + unitMode + ", unitName=" + unitName
+                + ", vipChannelEnabled=" + vipChannelEnabled + ", useTLS=" + useTLS
+                + ", socksProxyConfig=" + socksProxyConfig + ", language=" + language.name()
+                + ", namespace=" + namespace + ", mqClientApiTimeout=" + mqClientApiTimeout
+                + ", decodeReadBody=" + decodeReadBody + ", decodeDecompressBody=" + decodeDecompressBody
+                + ", isFetchNameSrvAddrByDnsLookup=" + isFetchNameSrvAddrByDnsLookup + ", fetchNamesrvAddrInterval=" + fetchNamesrvAddrInterval
+                + ", sendLatencyEnable=" + sendLatencyEnable + ", startDetectorEnable=" + startDetectorEnable
+                + ", enableStreamRequestType=" + enableStreamRequestType + ", useHeartbeatV2=" + useHeartbeatV2 + "]";
     }
 }
