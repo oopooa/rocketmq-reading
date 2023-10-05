@@ -536,7 +536,7 @@ public abstract class NettyRemotingAbstract {
             }
         } else {
             if (timeoutMillis <= 0) {
-                throw new RemotingTooMuchRequestException("invokeAsyncImpl invoke too fast");
+                throw new RemotingTimeoutException("invokeAsyncImpl call timeout");
             } else {
                 String info =
                     String.format("invokeAsyncImpl tryAcquire semaphore timeout, %dms, waiting thread nums: %d semaphoreAsyncValue: %d",
@@ -545,7 +545,7 @@ public abstract class NettyRemotingAbstract {
                         this.semaphoreAsync.availablePermits()
                     );
                 log.warn(info);
-                throw new RemotingTimeoutException(info);
+                throw new RemotingTooMuchRequestException(info);
             }
         }
     }
@@ -601,7 +601,7 @@ public abstract class NettyRemotingAbstract {
             }
         } else {
             if (timeoutMillis <= 0) {
-                throw new RemotingTooMuchRequestException("invokeOnewayImpl invoke too fast");
+                throw new RemotingTimeoutException("invokeOnewayImpl call timeout");
             } else {
                 String info = String.format(
                     "invokeOnewayImpl tryAcquire semaphore timeout, %dms, waiting thread nums: %d semaphoreOnewayValue: %d",
@@ -610,7 +610,7 @@ public abstract class NettyRemotingAbstract {
                     this.semaphoreOneway.availablePermits()
                 );
                 log.warn(info);
-                throw new RemotingTimeoutException(info);
+                throw new RemotingTooMuchRequestException(info);
             }
         }
     }
