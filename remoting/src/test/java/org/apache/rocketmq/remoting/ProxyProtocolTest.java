@@ -79,10 +79,10 @@ public class ProxyProtocolTest {
     }
 
     private void sendHAProxyMessage(RemotingClient remotingClient) throws Exception {
-        Method getAndCreateChannel = NettyRemotingClient.class.getDeclaredMethod("getAndCreateChannel", String.class);
+        Method getAndCreateChannel = NettyRemotingClient.class.getDeclaredMethod("getAndCreateChannel", String.class, long.class);
         getAndCreateChannel.setAccessible(true);
         NettyRemotingClient nettyRemotingClient = (NettyRemotingClient) remotingClient;
-        Channel channel = (Channel) getAndCreateChannel.invoke(nettyRemotingClient, getServerAddress());
+        Channel channel = (Channel) getAndCreateChannel.invoke(nettyRemotingClient, getServerAddress(), 3000L);
         HAProxyMessage message = new HAProxyMessage(HAProxyProtocolVersion.V2, HAProxyCommand.PROXY,
                 HAProxyProxiedProtocol.TCP4, "127.0.0.1", "127.0.0.2", 8000, 9000);
 

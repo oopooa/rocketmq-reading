@@ -127,6 +127,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     // backpressure related
     private Semaphore semaphoreAsyncSendNum;
     private Semaphore semaphoreAsyncSendSize;
+    private final int retryReservedTimeMs = Integer.parseInt(System.getProperty(MixAll.RETRY_RESERVED_TIME_MS, "100"));
 
     public DefaultMQProducerImpl(final DefaultMQProducer defaultMQProducer) {
         this(defaultMQProducer, null);
@@ -735,8 +736,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             callTimeout = true;
                             break;
                         }
-
-                        sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
+                        int reservedTime = (timesTotal - times - 1) * retryReservedTimeMs;
+                        sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, Math.max(timeout - costTime - reservedTime, retryReservedTimeMs));
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
                         switch (communicationMode) {

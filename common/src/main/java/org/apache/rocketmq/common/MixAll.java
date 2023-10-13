@@ -59,6 +59,7 @@ public class MixAll {
     public static final String NAMESRV_ADDR_PROPERTY = "rocketmq.namesrv.addr";
     public static final String MESSAGE_COMPRESS_TYPE = "rocketmq.message.compressType";
     public static final String MESSAGE_COMPRESS_LEVEL = "rocketmq.message.compressLevel";
+    public static final String RETRY_RESERVED_TIME_MS = "rocketmq.retry.reserved.time.ms";
     public static final String DEFAULT_NAMESRV_ADDR_LOOKUP = "jmenv.tbsite.net";
     public static final String WS_DOMAIN_NAME = System.getProperty("rocketmq.namesrv.domain", DEFAULT_NAMESRV_ADDR_LOOKUP);
     public static final String WS_DOMAIN_SUBGROUP = System.getProperty("rocketmq.namesrv.domain.subgroup", "nsaddr");
