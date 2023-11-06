@@ -38,4 +38,8 @@ public class KeyBuilder {
     public static String buildPollingNotificationKey(String topic, int queueId) {
         return topic + PopAckConstants.SPLIT + queueId;
     }
+
+    public static String buildCompactionLogKey(String topic, int queueId) {
+        return topic + "_" + queueId;
+    }
 }
