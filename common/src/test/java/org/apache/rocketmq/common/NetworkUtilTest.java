@@ -17,6 +17,8 @@
 package org.apache.rocketmq.common;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.List;
 import org.apache.rocketmq.common.utils.NetworkUtil;
 import org.junit.Test;
 
@@ -41,5 +43,28 @@ public class NetworkUtilTest {
     public void testConvert2IpStringWithHost() {
         String result = NetworkUtil.convert2IpString("localhost:9876");
         assertThat(result).isEqualTo("127.0.0.1:9876");
+    }
+
+    @Test
+    public void testIPv6Check() throws UnknownHostException {
+        InetAddress nonInternal = InetAddress.getByName("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
+        InetAddress internal = InetAddress.getByName("FE80:0000:0000:0000:0000:0000:0000:FFFF");
+        assertThat(NetworkUtil.isInternalV6IP(nonInternal)).isFalse();
+        assertThat(NetworkUtil.isInternalV6IP(internal)).isTrue();
+        assertThat(NetworkUtil.ipToIPv6Str(nonInternal.getAddress()).toUpperCase()).isEqualTo("2408:4004:0180:8100:3FAA:1DDE:2B3F:898A");
+    }
+
+    @Test
+    public void testGetLocalhostByNetworkInterface() {
+        assertThat(NetworkUtil.LOCALHOST).isNotNull();
+        assertThat(NetworkUtil.getLocalAddress()).isNotNull();
+    }
+
+    @Test
+    public void testGetLocalInetAddress() throws Exception {
+        List<String> localInetAddress = NetworkUtil.getLocalAddressList();
+        String local = InetAddress.getLocalHost().getHostAddress();
+        assertThat(localInetAddress).contains("127.0.0.1");
+        assertThat(local).isNotNull();
     }
 }

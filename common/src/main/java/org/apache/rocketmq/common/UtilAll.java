@@ -23,10 +23,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.security.AccessController;
@@ -37,7 +33,6 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +44,6 @@ import java.util.zip.InflaterInputStream;
 import org.apache.commons.lang3.JavaVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.org.slf4j.Logger;
 import org.apache.rocketmq.logging.org.slf4j.LoggerFactory;
@@ -526,130 +520,6 @@ public class UtilAll {
             }
         }
         return sb.toString();
-    }
-
-    public static boolean isInternalIP(byte[] ip) {
-        if (ip.length != 4) {
-            throw new RuntimeException("illegal ipv4 bytes");
-        }
-
-        //10.0.0.0~10.255.255.255
-        //172.16.0.0~172.31.255.255
-        //192.168.0.0~192.168.255.255
-        //127.0.0.0~127.255.255.255
-        if (ip[0] == (byte) 10) {
-            return true;
-        } else if (ip[0] == (byte) 127) {
-            return true;
-        } else if (ip[0] == (byte) 172) {
-            if (ip[1] >= (byte) 16 && ip[1] <= (byte) 31) {
-                return true;
-            }
-        } else if (ip[0] == (byte) 192) {
-            if (ip[1] == (byte) 168) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean isInternalV6IP(InetAddress inetAddr) {
-        if (inetAddr.isAnyLocalAddress() // Wild card ipv6
-            || inetAddr.isLinkLocalAddress() // Single broadcast ipv6 address: fe80:xx:xx...
-            || inetAddr.isLoopbackAddress() //Loopback ipv6 address
-            || inetAddr.isSiteLocalAddress()) { // Site local ipv6 address: fec0:xx:xx...
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean ipCheck(byte[] ip) {
-        if (ip.length != 4) {
-            throw new RuntimeException("illegal ipv4 bytes");
-        }
-
-        InetAddressValidator validator = InetAddressValidator.getInstance();
-        return validator.isValidInet4Address(ipToIPv4Str(ip));
-    }
-
-    private static boolean ipV6Check(byte[] ip) {
-        if (ip.length != 16) {
-            throw new RuntimeException("illegal ipv6 bytes");
-        }
-
-        InetAddressValidator validator = InetAddressValidator.getInstance();
-        return validator.isValidInet6Address(ipToIPv6Str(ip));
-    }
-
-    public static String ipToIPv4Str(byte[] ip) {
-        if (ip.length != 4) {
-            return null;
-        }
-        return new StringBuilder().append(ip[0] & 0xFF).append(".").append(
-                ip[1] & 0xFF).append(".").append(ip[2] & 0xFF)
-            .append(".").append(ip[3] & 0xFF).toString();
-    }
-
-    public static String ipToIPv6Str(byte[] ip) {
-        if (ip.length != 16) {
-            return null;
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < ip.length; i++) {
-            String hex = Integer.toHexString(ip[i] & 0xFF);
-            if (hex.length() < 2) {
-                sb.append(0);
-            }
-            sb.append(hex);
-            if (i % 2 == 1 && i < ip.length - 1) {
-                sb.append(":");
-            }
-        }
-        return sb.toString();
-    }
-
-    public static byte[] getIP() {
-        try {
-            Enumeration allNetInterfaces = NetworkInterface.getNetworkInterfaces();
-            InetAddress ip = null;
-            byte[] internalIP = null;
-            while (allNetInterfaces.hasMoreElements()) {
-                NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();
-                Enumeration addresses = netInterface.getInetAddresses();
-                while (addresses.hasMoreElements()) {
-                    ip = (InetAddress) addresses.nextElement();
-                    if (ip != null && ip instanceof Inet4Address) {
-                        byte[] ipByte = ip.getAddress();
-                        if (ipByte.length == 4) {
-                            if (ipCheck(ipByte)) {
-                                if (!isInternalIP(ipByte)) {
-                                    return ipByte;
-                                } else if (internalIP == null || internalIP[0] == (byte) 127) {
-                                    internalIP = ipByte;
-                                }
-                            }
-                        }
-                    } else if (ip != null && ip instanceof Inet6Address) {
-                        byte[] ipByte = ip.getAddress();
-                        if (ipByte.length == 16) {
-                            if (ipV6Check(ipByte)) {
-                                if (!isInternalV6IP(ip)) {
-                                    return ipByte;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (internalIP != null) {
-                return internalIP;
-            } else {
-                throw new RuntimeException("Can not get local ip");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Can not get local ip", e);
-        }
     }
 
     public static void deleteFile(File file) {
