@@ -19,10 +19,10 @@ package org.apache.rocketmq.namesrv.processor;
 
 import io.netty.channel.ChannelHandlerContext;
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.impl.MQClientAPIImpl;
@@ -43,6 +43,7 @@ import org.apache.rocketmq.remoting.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.route.TopicRouteData;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExtImpl;
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -167,7 +168,7 @@ public class ClusterTestRequestProcessorTest {
         RemotingCommand response = clientRequestProcessor.processRequest(mock(ChannelHandlerContext.class),
                 remotingCommand);
         assertThat(response.getCode()).isEqualTo(ResponseCode.SYSTEM_ERROR);
-        TimeUnit.SECONDS.sleep(waitSecondsForService + 1);
+        Awaitility.await().pollDelay(Duration.ofSeconds(waitSecondsForService + 1)).until(() -> true);
         response = clientRequestProcessor.processRequest(mock(ChannelHandlerContext.class), remotingCommand);
         assertThat(response.getCode()).isEqualTo(ResponseCode.SUCCESS);
     }

@@ -18,10 +18,11 @@
 package org.apache.rocketmq.broker.controller;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+
 
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.broker.out.BrokerOuterAPI;
@@ -43,6 +44,7 @@ import org.apache.rocketmq.store.config.MessageStoreConfig;
 import org.apache.rocketmq.store.ha.autoswitch.AutoSwitchHAService;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Sets;
+import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -171,7 +173,7 @@ public class ReplicasManagerTest {
         autoSwitchHAService.init(defaultMessageStore);
         replicasManager.start();
         // execute schedulingSyncBrokerMetadata()
-        TimeUnit.SECONDS.sleep(SCHEDULE_SERVICE_EXEC_PERIOD);
+        Awaitility.await().pollDelay(Duration.ofSeconds(SCHEDULE_SERVICE_EXEC_PERIOD)).until(() -> true);
     }
 
     @After
