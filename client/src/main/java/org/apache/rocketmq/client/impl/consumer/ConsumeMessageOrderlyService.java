@@ -487,7 +487,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                             long beginTimestamp = System.currentTimeMillis();
                             ConsumeReturnType returnType = ConsumeReturnType.SUCCESS;
                             boolean hasException = false;
-                            this.processQueue.getConsumeLock().lock();
+                            this.processQueue.getConsumeLock().readLock().lock();
                             try {
                                 if (this.processQueue.isDropped()) {
                                     log.warn("consumeMessage, the message queue not be able to consume, because it's dropped. {}",
@@ -504,7 +504,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
                                     messageQueue), e);
                                 hasException = true;
                             } finally {
-                                this.processQueue.getConsumeLock().unlock();
+                                this.processQueue.getConsumeLock().readLock().unlock();
                             }
 
                             if (null == status
