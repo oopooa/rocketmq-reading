@@ -422,29 +422,33 @@ public class ProcessQueue {
         try {
             this.treeMapLock.readLock().lockInterruptibly();
 
-            if (!this.msgTreeMap.isEmpty()) {
-                info.setCachedMsgMinOffset(this.msgTreeMap.firstKey());
-                info.setCachedMsgMaxOffset(this.msgTreeMap.lastKey());
-                info.setCachedMsgCount(this.msgTreeMap.size());
-                info.setCachedMsgSizeInMiB((int) (this.msgSize.get() / (1024 * 1024)));
+            try {
+                if (!this.msgTreeMap.isEmpty()) {
+                    info.setCachedMsgMinOffset(this.msgTreeMap.firstKey());
+                    info.setCachedMsgMaxOffset(this.msgTreeMap.lastKey());
+                    info.setCachedMsgCount(this.msgTreeMap.size());
+                    info.setCachedMsgSizeInMiB((int) (this.msgSize.get() / (1024 * 1024)));
+                }
+
+                if (!this.consumingMsgOrderlyTreeMap.isEmpty()) {
+                    info.setTransactionMsgMinOffset(this.consumingMsgOrderlyTreeMap.firstKey());
+                    info.setTransactionMsgMaxOffset(this.consumingMsgOrderlyTreeMap.lastKey());
+                    info.setTransactionMsgCount(this.consumingMsgOrderlyTreeMap.size());
+                }
+
+                info.setLocked(this.locked);
+                info.setTryUnlockTimes(this.tryUnlockTimes.get());
+                info.setLastLockTimestamp(this.lastLockTimestamp);
+
+                info.setDroped(this.dropped);
+                info.setLastPullTimestamp(this.lastPullTimestamp);
+                info.setLastConsumeTimestamp(this.lastConsumeTimestamp);
+            } finally {
+                this.treeMapLock.readLock().unlock();
             }
 
-            if (!this.consumingMsgOrderlyTreeMap.isEmpty()) {
-                info.setTransactionMsgMinOffset(this.consumingMsgOrderlyTreeMap.firstKey());
-                info.setTransactionMsgMaxOffset(this.consumingMsgOrderlyTreeMap.lastKey());
-                info.setTransactionMsgCount(this.consumingMsgOrderlyTreeMap.size());
-            }
-
-            info.setLocked(this.locked);
-            info.setTryUnlockTimes(this.tryUnlockTimes.get());
-            info.setLastLockTimestamp(this.lastLockTimestamp);
-
-            info.setDroped(this.dropped);
-            info.setLastPullTimestamp(this.lastPullTimestamp);
-            info.setLastConsumeTimestamp(this.lastConsumeTimestamp);
-        } catch (Exception e) {
-        } finally {
-            this.treeMapLock.readLock().unlock();
+        } catch (InterruptedException e) {
+            log.error("fillProcessQueueInfo lock error, ProcessQueueInfo={}", info, e);
         }
     }
 
