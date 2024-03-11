@@ -180,6 +180,11 @@ public class DefaultLitePullConsumer extends ClientConfig implements LitePullCon
     private String customizedTraceTopic;
 
     /**
+     * The rpc hook
+     */
+    private RPCHook rpcHook;
+
+    /**
      * Default constructor.
      */
     public DefaultLitePullConsumer() {
@@ -227,6 +232,7 @@ public class DefaultLitePullConsumer extends ClientConfig implements LitePullCon
         this.namespace = namespace;
         this.consumerGroup = consumerGroup;
         this.enableStreamRequestType = true;
+        this.rpcHook = rpcHook;
         defaultLitePullConsumerImpl = new DefaultLitePullConsumerImpl(this, rpcHook);
     }
 
@@ -599,7 +605,7 @@ public class DefaultLitePullConsumer extends ClientConfig implements LitePullCon
     private void setTraceDispatcher() {
         if (isEnableMsgTrace()) {
             try {
-                AsyncTraceDispatcher traceDispatcher = new AsyncTraceDispatcher(consumerGroup, TraceDispatcher.Type.CONSUME, customizedTraceTopic, null);
+                AsyncTraceDispatcher traceDispatcher = new AsyncTraceDispatcher(consumerGroup, TraceDispatcher.Type.CONSUME, customizedTraceTopic, rpcHook);
                 traceDispatcher.getTraceProducer().setUseTLS(this.isUseTLS());
                 this.traceDispatcher = traceDispatcher;
                 this.defaultLitePullConsumerImpl.registerConsumeMessageHook(
@@ -620,5 +626,13 @@ public class DefaultLitePullConsumer extends ClientConfig implements LitePullCon
 
     public void setEnableMsgTrace(boolean enableMsgTrace) {
         this.enableMsgTrace = enableMsgTrace;
+    }
+
+    public RPCHook getRpcHook() {
+        return rpcHook;
+    }
+
+    public void setRpcHook(RPCHook rpcHook) {
+        this.rpcHook = rpcHook;
     }
 }
