@@ -525,6 +525,8 @@ public class PopReviveService extends ServiceThread {
             long msgOffset = popCheckPoint.ackOffsetByIndex((byte) j);
             CompletableFuture<Pair<Long, Boolean>> future = getBizMessage(popCheckPoint.getTopic(), msgOffset, popCheckPoint.getQueueId(), popCheckPoint.getBrokerName())
                 .thenApply(resultPair -> {
+                    // Handle getBizMessage result and revive message.
+                    // Return Pair<Long, Boolean>, the second represents the revival result, false means failure and rePutCK is needed.
                     GetMessageStatus getMessageStatus = resultPair.getObject1();
                     MessageExt message = resultPair.getObject2();
                     if (message == null) {
@@ -540,6 +542,12 @@ public class PopReviveService extends ServiceThread {
                                 return new Pair<>(msgOffset, false);
 
                         }
+                    }
+                    // skip if message of the specified offset is not alive
+                    if (message.getQueueOffset() != msgOffset) {
+                        POP_LOGGER.warn("reviveQueueId={}, topic={}, returned msg offset is {}, required offset is {}, then continue",
+                            queueId, popCheckPoint.getTopic(), message.getQueueOffset(), msgOffset);
+                        return new Pair<>(msgOffset, true);
                     }
                     //skip ck from last epoch
                     if (popCheckPoint.getPopTime() < message.getStoreTimestamp()) {
