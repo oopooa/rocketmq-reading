@@ -94,6 +94,7 @@ import org.apache.rocketmq.tools.command.message.QueryMsgTraceByIdSubCommand;
 import org.apache.rocketmq.tools.command.message.SendMessageCommand;
 import org.apache.rocketmq.tools.command.namesrv.AddWritePermSubCommand;
 import org.apache.rocketmq.tools.command.namesrv.DeleteKvConfigCommand;
+import org.apache.rocketmq.tools.command.namesrv.GetKvConfigCommand;
 import org.apache.rocketmq.tools.command.namesrv.GetNamesrvConfigCommand;
 import org.apache.rocketmq.tools.command.namesrv.UpdateKvConfigCommand;
 import org.apache.rocketmq.tools.command.namesrv.UpdateNamesrvConfigCommand;
@@ -225,6 +226,7 @@ public class MQAdminStartup {
         initCommand(new TopicListSubCommand());
 
         initCommand(new UpdateKvConfigCommand());
+        initCommand(new GetKvConfigCommand());
         initCommand(new DeleteKvConfigCommand());
 
         initCommand(new WipeWritePermSubCommand());
