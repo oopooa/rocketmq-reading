@@ -31,7 +31,7 @@ public class MessageStoreConfig {
     @ImportantField
     private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";
 
-    //The directory in which the commitlog is kept
+    //The directory in which the commitLog is kept
     @ImportantField
     private String storePathCommitLog = null;
 
@@ -50,7 +50,7 @@ public class MessageStoreConfig {
     // CommitLog file size,default is 1G
     private int mappedFileSizeCommitLog = 1024 * 1024 * 1024;
 
-    // CompactinLog file size, default is 100M
+    // CompactionLog file size, default is 100M
     private int compactionMappedFileSize = 100 * 1024 * 1024;
 
     // CompactionLog consumeQueue file size, default is 10M
@@ -84,8 +84,8 @@ public class MessageStoreConfig {
     /**
      * 1. Register to broker after (startTime + disappearTimeAfterStart)
      * 2. Internal msg exchange will start after (startTime + disappearTimeAfterStart)
-     * A. PopReviveService
-     * B. TimerDequeueGetService
+     *  A. PopReviveService
+     *  B. TimerDequeueGetService
      */
     @ImportantField
     private int disappearTimeAfterStart = -1;
@@ -126,7 +126,7 @@ public class MessageStoreConfig {
     @ImportantField
     private int commitIntervalCommitLog = 200;
 
-    private int maxRecoveryCommitlogFiles = 30;
+    private int maxRecoveryCommitLogFiles = 30;
 
     private int diskSpaceWarningLevelRatio = 90;
 
@@ -148,7 +148,7 @@ public class MessageStoreConfig {
     private int deleteCommitLogFilesInterval = 100;
     // ConsumeQueue removal interval
     private int deleteConsumeQueueFilesInterval = 100;
-    private int destroyMapedFileIntervalForcibly = 1000 * 120;
+    private int destroyMappedFileIntervalForcibly = 1000 * 120;
     private int redeleteHangedFileInterval = 1000 * 120;
     // When to delete,default is at 4 am
     @ImportantField
@@ -160,7 +160,7 @@ public class MessageStoreConfig {
     @ImportantField
     private int deleteFileBatchMax = 10;
     // Flow control for ConsumeQueue
-    private int putMsgIndexHightWater = 600000;
+    private int putMsgIndexHighWater = 600000;
     // The maximum size of message body,default is 4M,4M only for body length,not include others.
     private int maxMessageSize = 1024 * 1024 * 4;
 
@@ -175,7 +175,7 @@ public class MessageStoreConfig {
     // How many pages are to be committed when commit data to file
     private int commitCommitLogLeastPages = 4;
     // Flush page size when the disk in warming state
-    private int flushLeastPagesWhenWarmMapedFile = 1024 / 4 * 16;
+    private int flushLeastPagesWhenWarmMappedFile = 1024 / 4 * 16;
     // How many pages are to be flushed when flush ConsumeQueue
     private int flushConsumeQueueLeastPages = 2;
     private int flushCommitLogThoroughInterval = 1000 * 10;
@@ -222,7 +222,7 @@ public class MessageStoreConfig {
     private long flushDelayOffsetInterval = 1000 * 10;
     @ImportantField
     private boolean cleanFileForciblyEnable = true;
-    private boolean warmMapedFileEnable = false;
+    private boolean warmMappedFileEnable = false;
     private boolean offsetCheckInSlave = false;
     private boolean debugLockEnable = false;
     private boolean duplicationEnable = false;
@@ -453,12 +453,12 @@ public class MessageStoreConfig {
         this.diskFallRecorded = diskFallRecorded;
     }
 
-    public boolean isWarmMapedFileEnable() {
-        return warmMapedFileEnable;
+    public boolean isWarmMappedFileEnable() {
+        return warmMappedFileEnable;
     }
 
-    public void setWarmMapedFileEnable(boolean warmMapedFileEnable) {
-        this.warmMapedFileEnable = warmMapedFileEnable;
+    public void setWarmMappedFileEnable(boolean warmMappedFileEnable) {
+        this.warmMappedFileEnable = warmMappedFileEnable;
     }
 
     public int getCompactionMappedFileSize() {
@@ -578,12 +578,12 @@ public class MessageStoreConfig {
         this.flushIntervalConsumeQueue = flushIntervalConsumeQueue;
     }
 
-    public int getPutMsgIndexHightWater() {
-        return putMsgIndexHightWater;
+    public int getPutMsgIndexHighWater() {
+        return putMsgIndexHighWater;
     }
 
-    public void setPutMsgIndexHightWater(int putMsgIndexHightWater) {
-        this.putMsgIndexHightWater = putMsgIndexHightWater;
+    public void setPutMsgIndexHighWater(int putMsgIndexHighWater) {
+        this.putMsgIndexHighWater = putMsgIndexHighWater;
     }
 
     public int getCleanResourceInterval() {
@@ -816,12 +816,12 @@ public class MessageStoreConfig {
         this.flushConsumeQueueThoroughInterval = flushConsumeQueueThoroughInterval;
     }
 
-    public int getDestroyMapedFileIntervalForcibly() {
-        return destroyMapedFileIntervalForcibly;
+    public int getDestroyMappedFileIntervalForcibly() {
+        return destroyMappedFileIntervalForcibly;
     }
 
-    public void setDestroyMapedFileIntervalForcibly(int destroyMapedFileIntervalForcibly) {
-        this.destroyMapedFileIntervalForcibly = destroyMapedFileIntervalForcibly;
+    public void setDestroyMapedFileIntervalForcibly(int destroyMappedFileIntervalForcibly) {
+        this.destroyMappedFileIntervalForcibly = destroyMappedFileIntervalForcibly;
     }
 
     public int getFileReservedTime() {
@@ -1028,12 +1028,12 @@ public class MessageStoreConfig {
         this.storePathRootDir = storePathRootDir;
     }
 
-    public int getFlushLeastPagesWhenWarmMapedFile() {
-        return flushLeastPagesWhenWarmMapedFile;
+    public int getFlushLeastPagesWhenWarmMappedFile() {
+        return flushLeastPagesWhenWarmMappedFile;
     }
 
-    public void setFlushLeastPagesWhenWarmMapedFile(int flushLeastPagesWhenWarmMapedFile) {
-        this.flushLeastPagesWhenWarmMapedFile = flushLeastPagesWhenWarmMapedFile;
+    public void setFlushLeastPagesWhenWarmMapedFile(int flushLeastPagesWhenWarmMappedFile) {
+        this.flushLeastPagesWhenWarmMappedFile = flushLeastPagesWhenWarmMappedFile;
     }
 
     public boolean isOffsetCheckInSlave() {
@@ -1212,12 +1212,12 @@ public class MessageStoreConfig {
         this.maxAsyncPutMessageRequests = maxAsyncPutMessageRequests;
     }
 
-    public int getMaxRecoveryCommitlogFiles() {
-        return maxRecoveryCommitlogFiles;
+    public int getMaxRecoveryCommitLogFiles() {
+        return maxRecoveryCommitLogFiles;
     }
 
-    public void setMaxRecoveryCommitlogFiles(final int maxRecoveryCommitlogFiles) {
-        this.maxRecoveryCommitlogFiles = maxRecoveryCommitlogFiles;
+    public void setMaxRecoveryCommitLogFiles(final int maxRecoveryCommitLogFiles) {
+        this.maxRecoveryCommitLogFiles = maxRecoveryCommitLogFiles;
     }
 
     public boolean isDispatchFromSenderThread() {
