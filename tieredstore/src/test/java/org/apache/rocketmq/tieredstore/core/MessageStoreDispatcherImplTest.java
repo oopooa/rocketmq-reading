@@ -79,7 +79,6 @@ public class MessageStoreDispatcherImplTest {
         mq = new MessageQueue("StoreTest", storeConfig.getBrokerName(), 1);
         metadataStore = new DefaultMetadataStore(storeConfig);
         executor = new MessageStoreExecutor();
-        fileStore = new FlatFileStore(storeConfig, metadataStore, executor);
     }
 
     @After
@@ -95,7 +94,9 @@ public class MessageStoreDispatcherImplTest {
         MessageStore defaultStore = Mockito.mock(MessageStore.class);
         Mockito.when(defaultStore.getMinOffsetInQueue(anyString(), anyInt())).thenReturn(100L);
         Mockito.when(defaultStore.getMaxOffsetInQueue(anyString(), anyInt())).thenReturn(200L);
+        Mockito.when(defaultStore.getMessageStoreConfig()).thenReturn(new org.apache.rocketmq.store.config.MessageStoreConfig());
 
+        fileStore = new FlatFileStore(storeConfig, metadataStore, executor, defaultStore);
         messageStore = Mockito.mock(TieredMessageStore.class);
         IndexService indexService =
             new IndexStoreService(new FlatFileFactory(metadataStore, storeConfig), storePath);
@@ -159,6 +160,9 @@ public class MessageStoreDispatcherImplTest {
     @Test
     public void dispatchServiceTest() {
         MessageStore defaultStore = Mockito.mock(MessageStore.class);
+        Mockito.when(defaultStore.getMessageStoreConfig()).thenReturn(new org.apache.rocketmq.store.config.MessageStoreConfig());
+
+        fileStore = new FlatFileStore(storeConfig, metadataStore, executor, defaultStore);
         messageStore = Mockito.mock(TieredMessageStore.class);
         IndexService indexService =
             new IndexStoreService(new FlatFileFactory(metadataStore, storeConfig), storePath);
