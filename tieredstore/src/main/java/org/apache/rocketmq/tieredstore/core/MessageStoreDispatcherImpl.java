@@ -34,6 +34,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.store.DispatchRequest;
 import org.apache.rocketmq.store.MessageStore;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
+import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.queue.ConsumeQueueInterface;
 import org.apache.rocketmq.store.queue.CqUnit;
 import org.apache.rocketmq.tieredstore.MessageStoreConfig;
@@ -292,7 +293,14 @@ public class MessageStoreDispatcherImpl extends ServiceThread implements Message
     public void run() {
         log.info("{} service started", this.getServiceName());
         while (!this.isStopped()) {
-            flatFileStore.deepCopyFlatFileToList().forEach(this::dispatchWithSemaphore);
+            if (defaultStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
+                log.info("Broker role is slave, skip dispatch");
+            } else if (defaultStore.getMessageStoreConfig().isEnableDLegerCommitLog() &&
+                defaultStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.ASYNC_MASTER) {
+                log.info("Dledger leader is not elected yet, skip dispatch");
+            } else {
+                flatFileStore.deepCopyFlatFileToList().forEach(this::dispatchWithSemaphore);
+            }
             this.waitForRunning(Duration.ofSeconds(20).toMillis());
         }
         log.info("{} service shutdown", this.getServiceName());

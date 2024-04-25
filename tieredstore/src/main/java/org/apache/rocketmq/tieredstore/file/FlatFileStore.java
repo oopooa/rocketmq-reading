@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.store.MessageStore;
+import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.tieredstore.MessageStoreConfig;
 import org.apache.rocketmq.tieredstore.MessageStoreExecutor;
 import org.apache.rocketmq.tieredstore.metadata.MetadataStore;
@@ -45,13 +47,15 @@ public class FlatFileStore {
     private final MessageStoreExecutor executor;
     private final FlatFileFactory flatFileFactory;
     private final ConcurrentMap<MessageQueue, FlatMessageFile> flatFileConcurrentMap;
+    private final MessageStore defaultStore;
 
-    public FlatFileStore(MessageStoreConfig storeConfig, MetadataStore metadataStore, MessageStoreExecutor executor) {
+    public FlatFileStore(MessageStoreConfig storeConfig, MetadataStore metadataStore, MessageStoreExecutor executor, MessageStore defaultStore) {
         this.storeConfig = storeConfig;
         this.metadataStore = metadataStore;
         this.executor = executor;
         this.flatFileFactory = new FlatFileFactory(metadataStore, storeConfig);
         this.flatFileConcurrentMap = new ConcurrentHashMap<>();
+        this.defaultStore = defaultStore;
     }
 
     public boolean load() {
@@ -60,12 +64,19 @@ public class FlatFileStore {
             this.flatFileConcurrentMap.clear();
             this.recover();
             this.executor.commonExecutor.scheduleWithFixedDelay(() -> {
-                long expiredTimeStamp = System.currentTimeMillis() -
-                    TimeUnit.HOURS.toMillis(storeConfig.getTieredStoreFileReservedTime());
-                for (FlatMessageFile flatFile : deepCopyFlatFileToList()) {
-                    flatFile.destroyExpiredFile(expiredTimeStamp);
-                    if (flatFile.consumeQueue.fileSegmentTable.isEmpty()) {
-                        this.destroyFile(flatFile.getMessageQueue());
+                if (defaultStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.SLAVE) {
+                    log.info("Broker role is slave, skip destroy");
+                } else if (defaultStore.getMessageStoreConfig().isEnableDLegerCommitLog() &&
+                        defaultStore.getMessageStoreConfig().getBrokerRole() == BrokerRole.ASYNC_MASTER) {
+                    log.info("Dledger leader is not elected yet, skip destroy");
+                } else {
+                    long expiredTimeStamp = System.currentTimeMillis() -
+                            TimeUnit.HOURS.toMillis(storeConfig.getTieredStoreFileReservedTime());
+                    for (FlatMessageFile flatFile : deepCopyFlatFileToList()) {
+                        flatFile.destroyExpiredFile(expiredTimeStamp);
+                        if (flatFile.consumeQueue.fileSegmentTable.isEmpty()) {
+                            this.destroyFile(flatFile.getMessageQueue());
+                        }
                     }
                 }
             }, 60, 60, TimeUnit.SECONDS);

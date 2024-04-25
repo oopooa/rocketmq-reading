@@ -88,7 +88,7 @@ public class TieredMessageStore extends AbstractPluginMessageStore {
         this.metadataStore = this.getMetadataStore(this.storeConfig);
         this.topicFilter = new MessageStoreTopicFilter(this.storeConfig);
         this.storeExecutor = new MessageStoreExecutor();
-        this.flatFileStore = new FlatFileStore(this.storeConfig, this.metadataStore, this.storeExecutor);
+        this.flatFileStore = new FlatFileStore(this.storeConfig, this.metadataStore, this.storeExecutor, this.defaultStore);
         this.indexService = new IndexStoreService(this.flatFileStore.getFlatFileFactory(),
             MessageStoreUtil.getIndexFilePath(this.storeConfig.getBrokerName()));
         this.fetcher = new MessageStoreFetcherImpl(this);
