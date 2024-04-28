@@ -58,6 +58,7 @@ public class NamesrvStartup {
 
     public static NamesrvController main0(String[] args) {
         try {
+            // 解析命令行和配置文件
             parseCommandlineAndConfigFile(args);
             NamesrvController controller = createAndStartNamesrvController();
             return controller;
@@ -85,16 +86,23 @@ public class NamesrvStartup {
         // 设置 RocketMQ Remoting 版本信息, 属性名为 rocketmq.remoting.version
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
 
+        // 构建基础命令行参数解析配置
         Options options = ServerUtil.buildCommandlineOptions(new Options());
+        // 解析命令行参数 并新增 -c -p 参数解析
         CommandLine commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new DefaultParser());
         if (null == commandLine) {
+            // 异常退出
             System.exit(-1);
             return;
         }
 
+        // 创建 namesrv 配置类
         namesrvConfig = new NamesrvConfig();
+        // 创建 Netty服务端 配置类
         nettyServerConfig = new NettyServerConfig();
+        // 创建 Netty客户端 配置类
         nettyClientConfig = new NettyClientConfig();
+        // 设置 Netty 服务监听端口为 9876
         nettyServerConfig.setListenPort(9876);
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
@@ -230,10 +238,12 @@ public class NamesrvStartup {
     }
 
     public static Options buildCommandlineOptions(final Options options) {
+        // 配置 -c 命令行参数解析 指定 namesrv 配置文件
         Option opt = new Option("c", "configFile", true, "Name server config properties file");
         opt.setRequired(false);
         options.addOption(opt);
 
+        // 配置 -p 命令行参数解析 输出所有配置项
         opt = new Option("p", "printConfigItem", false, "Print all config items");
         opt.setRequired(false);
         options.addOption(opt);

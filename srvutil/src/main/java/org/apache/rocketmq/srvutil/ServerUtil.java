@@ -27,13 +27,17 @@ import org.apache.commons.cli.ParseException;
 public class ServerUtil {
 
     public static Options buildCommandlineOptions(final Options options) {
+        // 配置 -h 命令行参数解析 输出帮助信息
         Option opt = new Option("h", "help", false, "Print help");
+        // 该参数不是必须的
         opt.setRequired(false);
         options.addOption(opt);
 
+        // 配置 -n 命令行参数解析 配置 namesrv 地址列表
         opt =
             new Option("n", "namesrvAddr", true,
                 "Name server address list, eg: '192.168.0.1:9876;192.168.0.2:9876'");
+        // 该参数不是必须的
         opt.setRequired(false);
         options.addOption(opt);
 
@@ -43,17 +47,25 @@ public class ServerUtil {
     public static CommandLine parseCmdLine(final String appName, String[] args, Options options,
         CommandLineParser parser) {
         HelpFormatter hf = new HelpFormatter();
+        // 设置帮助信息每行的宽度为 110 个字符 (默认为 74, 超出的部分会换行显示)
         hf.setWidth(110);
         CommandLine commandLine = null;
         try {
+            // 解析命令行参数, 如果参数不能被解析或者缺失, 则抛出异常
             commandLine = parser.parse(options, args);
+            // 检查命令行参数是否包含 -h 或 --help
             if (commandLine.hasOption('h')) {
+                // 输出命令行选项帮助信息, 并打印基于 options 的用法说明 比如 [-c <arg>] [-h] [-n <arg>] [-p]
                 hf.printHelp(appName, options, true);
+                // 正常退出
                 System.exit(0);
             }
         } catch (ParseException e) {
+            // 输出异常信息
             System.err.println(e.getMessage());
+            // 输出正确的命令行选项帮助信息
             hf.printHelp(appName, options, true);
+            // 异常退出
             System.exit(1);
         }
 
