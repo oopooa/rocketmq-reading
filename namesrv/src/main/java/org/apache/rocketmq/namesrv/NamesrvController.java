@@ -91,9 +91,13 @@ public class NamesrvController {
         this.namesrvConfig = namesrvConfig;
         this.nettyServerConfig = nettyServerConfig;
         this.nettyClientConfig = nettyClientConfig;
+        // 创建 KV配置管理器
         this.kvConfigManager = new KVConfigManager(this);
+        // 创建 Broker 连接内部服务, 用于处理 Broker 连接发生的变化
         this.brokerHousekeepingService = new BrokerHousekeepingService(this);
+        // 创建路由信息管理器
         this.routeInfoManager = new RouteInfoManager(namesrvConfig, this);
+        // 创建配置类, 并将 NamesrvConfig 和 NettyServerConfig 的配置注册到内部 allConfigs 中
         this.configuration = new Configuration(LOGGER, this.namesrvConfig, this.nettyServerConfig);
         this.configuration.setStorePathFromConfig(this.namesrvConfig, "configStorePath");
     }
