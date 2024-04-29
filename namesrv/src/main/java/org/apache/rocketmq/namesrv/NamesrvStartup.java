@@ -51,6 +51,7 @@ public class NamesrvStartup {
     private static NettyClientConfig nettyClientConfig = null;
     private static ControllerConfig controllerConfig = null;
 
+    // 🚩 Namesrv 服务入口
     public static void main(String[] args) {
         main0(args);
         controllerManagerMain();
