@@ -259,20 +259,28 @@ public class MixAll {
 
     public static void printObjectProperties(final Logger logger, final Object object,
         final boolean onlyImportantField) {
+        // 获取类的所有字段
         Field[] fields = object.getClass().getDeclaredFields();
         for (Field field : fields) {
+            // 如果当前字段不是 static 的
             if (!Modifier.isStatic(field.getModifiers())) {
+                // 获取字段名称
                 String name = field.getName();
+                // 字段名称不是以 this 开头的
                 if (!name.startsWith("this")) {
+                    // 如果只输出重要的字段
                     if (onlyImportantField) {
+                        // 获取当前字段的 ImportantField 注解
                         Annotation annotation = field.getAnnotation(ImportantField.class);
                         if (null == annotation) {
+                            // 没有被标记为重要字段, 则跳过
                             continue;
                         }
                     }
 
                     Object value = null;
                     try {
+                        // 取消访问控制检查，允许对私有和受保护字段的访问
                         field.setAccessible(true);
                         value = field.get(object);
                         if (null == value) {
@@ -283,6 +291,7 @@ public class MixAll {
                     }
 
                     if (logger != null) {
+                        // 输出对象属性信息
                         logger.info(name + "=" + value);
                     }
                 }
@@ -352,21 +361,30 @@ public class MixAll {
     }
 
     public static void properties2Object(final Properties p, final Object object) {
+        // 获取配置类所有方法
         Method[] methods = object.getClass().getMethods();
         for (Method method : methods) {
+            // 获取方法名
             String mn = method.getName();
+            // 判断是否为 set 开头的方法, 即设置属性值的方法
             if (mn.startsWith("set")) {
                 try {
+                    // 截取掉 set 加第一个字母 (setConfigStorePath -> onfigStorePath)
                     String tmp = mn.substring(4);
+                    // 获取 set 之后第一个字母 (setConfigStorePath -> C)
                     String first = mn.substring(3, 4);
 
+                    // 拼接属性 key (c + onfigStorePath -> configStorePath)
                     String key = first.toLowerCase() + tmp;
+                    // 尝试从配置属性中获取属性值
                     String property = p.getProperty(key);
                     if (property != null) {
                         Class<?>[] pt = method.getParameterTypes();
                         if (pt != null && pt.length > 0) {
+                            // 获取方法参数类型名称
                             String cn = pt[0].getSimpleName();
                             Object arg = null;
+                            // 根据参数类型 转换对应属性值
                             if (cn.equals("int") || cn.equals("Integer")) {
                                 arg = Integer.parseInt(property);
                             } else if (cn.equals("long") || cn.equals("Long")) {
@@ -378,11 +396,14 @@ public class MixAll {
                             } else if (cn.equals("float") || cn.equals("Float")) {
                                 arg = Float.parseFloat(property);
                             } else if (cn.equals("String")) {
+                                // 字符串类型, 去除前后空格
                                 property = property.trim();
                                 arg = property;
                             } else {
+                                // 不是以上类型, 则跳过当前属性
                                 continue;
                             }
+                            // 调用方法为配置对象属性赋值
                             method.invoke(object, arg);
                         }
                     }

@@ -80,11 +80,14 @@ public class ServerUtil {
 
     public static Properties commandLine2Properties(final CommandLine commandLine) {
         Properties properties = new Properties();
+        // 获取命令行传入的参数数组
         Option[] opts = commandLine.getOptions();
 
         if (opts != null) {
             for (Option opt : opts) {
+                // 获取完整属性名
                 String name = opt.getLongOpt();
+                // 获取属性值
                 String value = commandLine.getOptionValue(name);
                 if (value != null) {
                     properties.setProperty(name, value);
