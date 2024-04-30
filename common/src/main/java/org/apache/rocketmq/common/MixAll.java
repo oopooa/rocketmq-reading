@@ -327,18 +327,29 @@ public class MixAll {
         return properties;
     }
 
+    /**
+     * 将对象属性转换为 properties, 包括非 Object 父类中的属性
+     *
+     * @param object 需要转换的对象
+     * @return 转换后的 Properties
+     */
     public static Properties object2Properties(final Object object) {
         Properties properties = new Properties();
 
         Class<?> objectClass = object.getClass();
         while (true) {
+            // 获取类的所有字段
             Field[] fields = objectClass.getDeclaredFields();
             for (Field field : fields) {
+                // 如果当前字段不是 static 的
                 if (!Modifier.isStatic(field.getModifiers())) {
+                    // 获取字段名称
                     String name = field.getName();
+                    // 如果名称不是以 this 开头的
                     if (!name.startsWith("this")) {
                         Object value = null;
                         try {
+                            // 取消访问控制检查, 允许对私有和受保护字段的访问
                             field.setAccessible(true);
                             value = field.get(object);
                         } catch (IllegalAccessException e) {
@@ -351,9 +362,12 @@ public class MixAll {
                     }
                 }
             }
+            // 当前类或其父类是 Object 时
             if (objectClass == Object.class || objectClass.getSuperclass() == Object.class) {
+                // 退出循环
                 break;
             }
+            // 获取当前类的父类, 进行下一次循环
             objectClass = objectClass.getSuperclass();
         }
 

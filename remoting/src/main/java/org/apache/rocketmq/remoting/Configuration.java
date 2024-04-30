@@ -59,6 +59,7 @@ public class Configuration {
             if (configObject == null) {
                 continue;
             }
+            // 将配置注册到 allConfigs
             registerConfig(configObject);
         }
     }
@@ -75,16 +76,19 @@ public class Configuration {
      */
     public Configuration registerConfig(Object configObject) {
         try {
+            // 获取写锁并允许中断
             readWriteLock.writeLock().lockInterruptibly();
 
             try {
 
                 Properties registerProps = MixAll.object2Properties(configObject);
 
+                // 把属性合并到 allConfigs 中
                 merge(registerProps, this.allConfigs);
 
                 configObjectList.add(configObject);
             } finally {
+                // 操作完成, 释放写锁
                 readWriteLock.writeLock().unlock();
             }
         } catch (InterruptedException e) {
@@ -318,10 +322,18 @@ public class Configuration {
         return stringBuilder.toString();
     }
 
+    /**
+     * 合并两个 Properties, 并在属性覆盖时输出日志
+     *
+     * @param from 源 Properties
+     * @param to   目标 Properties
+     */
     private void merge(Properties from, Properties to) {
         for (Entry<Object, Object> next : from.entrySet()) {
             Object fromObj = next.getValue(), toObj = to.get(next.getKey());
+            // 目标属性值不为空且和源属性值不同时
             if (toObj != null && !toObj.equals(fromObj)) {
+                // 输出属性覆盖日志
                 log.info("Replace, key: {}, value: {} -> {}", next.getKey(), toObj, fromObj);
             }
             to.put(next.getKey(), fromObj);
