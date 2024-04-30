@@ -123,9 +123,7 @@ public class Configuration {
     }
 
     /**
-     * The store path will be gotten from the field of object.
-     *
-     * @throws java.lang.RuntimeException if the field of object is not exist.
+     * 设置存储路径, 保存了对象和字段实例, 后续调用 {@link #getStorePath()} 时从对象实例的该字段中获取
      */
     public void setStorePathFromConfig(Object object, String fieldName) {
         assert object != null;

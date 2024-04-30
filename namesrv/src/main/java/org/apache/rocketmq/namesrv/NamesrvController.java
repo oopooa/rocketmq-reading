@@ -99,11 +99,13 @@ public class NamesrvController {
         this.routeInfoManager = new RouteInfoManager(namesrvConfig, this);
         // 创建配置类, 并将 NamesrvConfig 和 NettyServerConfig 的配置注册到内部 allConfigs 中
         this.configuration = new Configuration(LOGGER, this.namesrvConfig, this.nettyServerConfig);
+        // 设置存储路径
         this.configuration.setStorePathFromConfig(this.namesrvConfig, "configStorePath");
     }
 
     public boolean initialize() {
         loadConfig();
+        // 创建 Netty 远程服务实例
         initiateNetworkComponents();
         initiateThreadExecutors();
         registerProcessor();

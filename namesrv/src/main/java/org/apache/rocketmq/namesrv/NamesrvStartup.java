@@ -45,6 +45,10 @@ public class NamesrvStartup {
 
     private final static Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private final static Logger logConsole = LoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_LOGGER_NAME);
+
+    /**
+     * 通过配置文件加载的属性
+     */
     private static Properties properties = null;
     private static NamesrvConfig namesrvConfig = null;
     private static NettyServerConfig nettyServerConfig = null;
@@ -191,7 +195,7 @@ public class NamesrvStartup {
     public static NamesrvController createNamesrvController() {
 
         final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig, nettyClientConfig);
-        // remember all configs to prevent discard
+        // 从配置文件中加载的属性注册到 allConfigs 中
         controller.getConfiguration().registerConfig(properties);
         return controller;
     }
@@ -202,6 +206,7 @@ public class NamesrvStartup {
             throw new IllegalArgumentException("NamesrvController is null");
         }
 
+        // 初始化 NamesrvController
         boolean initResult = controller.initialize();
         if (!initResult) {
             controller.shutdown();
