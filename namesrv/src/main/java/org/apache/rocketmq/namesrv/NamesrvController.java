@@ -107,8 +107,11 @@ public class NamesrvController {
         loadConfig();
         // 创建 Netty 远程服务实例
         initiateNetworkComponents();
+        // 初始化请求处理等线程池
         initiateThreadExecutors();
+        // 注册 Netty 请求处理器
         registerProcessor();
+        // 开启定时任务
         startScheduleService();
         initiateSslContext();
         initiateRpcHooks();
@@ -120,12 +123,16 @@ public class NamesrvController {
     }
 
     private void startScheduleService() {
+        // 开启定时任务, 扫描不活跃的 broker, 默认间隔 5s/次
         this.scanExecutorService.scheduleAtFixedRate(NamesrvController.this.routeInfoManager::scanNotActiveBroker,
             5, this.namesrvConfig.getScanNotActiveBrokerInterval(), TimeUnit.MILLISECONDS);
 
+        // 开启定时任务, 输出 kv 配置信息, 间隔 10m/次
         this.scheduledExecutorService.scheduleAtFixedRate(NamesrvController.this.kvConfigManager::printAllPeriodically,
             1, 10, TimeUnit.MINUTES);
 
+        // 开启定时任务, 输出当前两个阻塞队列的剩余任务数量, 间隔 1s/次
+        // ❓ 根据 LoggerName 来看, 还没有配置日志输出, 目前不会有生效的条件
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 NamesrvController.this.printWaterMark();
@@ -141,10 +148,13 @@ public class NamesrvController {
     }
 
     private void initiateThreadExecutors() {
+        // 创建供线程池使用的阻塞任务队列, 默认容量为 10000
         this.defaultThreadPoolQueue = new LinkedBlockingQueue<>(this.namesrvConfig.getDefaultThreadPoolQueueCapacity());
+        // 创建处理 broker 和操作请求的线程池, 默认线程数固定 16 个
         this.defaultExecutor = ThreadUtils.newThreadPoolExecutor(this.namesrvConfig.getDefaultThreadPoolNums(), this.namesrvConfig.getDefaultThreadPoolNums(), 1000 * 60, TimeUnit.MILLISECONDS, this.defaultThreadPoolQueue, new ThreadFactoryImpl("RemotingExecutorThread_"));
-
+        // 创建供线程池使用的阻塞任务队列, 默认容量为 50000
         this.clientRequestThreadPoolQueue = new LinkedBlockingQueue<>(this.namesrvConfig.getClientRequestThreadPoolQueueCapacity());
+        // 创建客户端请求处理线程池, 默认线程数固定 8 个
         this.clientRequestExecutor = ThreadUtils.newThreadPoolExecutor(this.namesrvConfig.getClientRequestThreadPoolNums(), this.namesrvConfig.getClientRequestThreadPoolNums(), 1000 * 60, TimeUnit.MILLISECONDS, this.clientRequestThreadPoolQueue, new ThreadFactoryImpl("ClientRequestExecutorThread_"));
     }
 
@@ -208,14 +218,16 @@ public class NamesrvController {
     }
 
     private void registerProcessor() {
+        // 是否为集群测试
         if (namesrvConfig.isClusterTest()) {
-
+            // 注册默认处理器
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()), this.defaultExecutor);
         } else {
             // Support get route info only temporarily
             ClientRequestProcessor clientRequestProcessor = new ClientRequestProcessor(this);
+            // 注册根据 topic 获取路由信息的请求处理器
             this.remotingServer.registerProcessor(RequestCode.GET_ROUTEINFO_BY_TOPIC, clientRequestProcessor, this.clientRequestExecutor);
-
+            // 注册默认处理器
             this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.defaultExecutor);
         }
     }
