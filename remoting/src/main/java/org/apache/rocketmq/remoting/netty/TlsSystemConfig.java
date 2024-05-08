@@ -20,6 +20,10 @@ package org.apache.rocketmq.remoting.netty;
 import io.netty.handler.ssl.SslContext;
 import org.apache.rocketmq.remoting.common.TlsMode;
 
+/**
+ * TLS (Transport Layer Security)
+ * 一种加密协议, 用于在两个通信应用之间提供安全的数据传输
+ */
 public class TlsSystemConfig {
     public static final String TLS_SERVER_MODE = "tls.server.mode";
     public static final String TLS_ENABLE = "tls.enable";

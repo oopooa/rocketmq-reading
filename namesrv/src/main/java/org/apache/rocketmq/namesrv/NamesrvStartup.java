@@ -55,7 +55,7 @@ public class NamesrvStartup {
     private static NettyClientConfig nettyClientConfig = null;
     private static ControllerConfig controllerConfig = null;
 
-    // 🚩 Namesrv 服务入口
+    // 🚩 NameServer 服务入口
     public static void main(String[] args) {
         main0(args);
         controllerManagerMain();
@@ -101,7 +101,7 @@ public class NamesrvStartup {
             return;
         }
 
-        // 创建 Namesrv 配置类
+        // 创建 NameServer 配置类
         namesrvConfig = new NamesrvConfig();
         // 创建 Netty服务端 配置类
         nettyServerConfig = new NettyServerConfig();
@@ -119,13 +119,13 @@ public class NamesrvStartup {
                 properties = new Properties();
                 // 从流中加载配置属性
                 properties.load(in);
-                // 把属性转换到 Namesrv 配置中
+                // 把属性转换到 NameServer 配置中
                 MixAll.properties2Object(properties, namesrvConfig);
                 // 把属性转换到 NettyServer 配置中
                 MixAll.properties2Object(properties, nettyServerConfig);
                 // 把属性转换到 NettyClient 配置中
                 MixAll.properties2Object(properties, nettyClientConfig);
-                // 是否在当前 Namesrv 开启 controller
+                // 是否在当前 NameServer 开启 controller
                 if (namesrvConfig.isEnableControllerInNamesrv()) {
                     // 创建 Controller 配置类
                     controllerConfig = new ControllerConfig();
@@ -146,17 +146,17 @@ public class NamesrvStartup {
             }
         }
 
-        // 解析命令行参数, 并转换到 Namesrv 配置中
+        // 解析命令行参数, 并转换到 NameServer 配置中
         MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
         // 检查命令行参数是否包含 -p 或 --printConfigItem
         if (commandLine.hasOption('p')) {
-            // 输出 Namesrv 配置详情
+            // 输出 NameServer 配置详情
             MixAll.printObjectProperties(logConsole, namesrvConfig);
             // 输出 NettyServer 配置详情
             MixAll.printObjectProperties(logConsole, nettyServerConfig);
             // 输出 NettyClient 配置详情
             MixAll.printObjectProperties(logConsole, nettyClientConfig);
-            // 是否在当前 Namesrv 开启 controller
+            // 是否在当前 NameServer 开启 controller
             if (namesrvConfig.isEnableControllerInNamesrv()) {
                 // 输出 Controller 配置详情
                 MixAll.printObjectProperties(logConsole, controllerConfig);
@@ -172,7 +172,7 @@ public class NamesrvStartup {
             // 异常退出
             System.exit(-2);
         }
-        // 输出 Namesrv 配置详情到日志文件
+        // 输出 NameServer 配置详情到日志文件
         MixAll.printObjectProperties(log, namesrvConfig);
         // 输出 NettyServer 配置详情到日志文件
         MixAll.printObjectProperties(log, nettyServerConfig);
@@ -181,9 +181,9 @@ public class NamesrvStartup {
 
     public static NamesrvController createAndStartNamesrvController() throws Exception {
 
-        // 创建 NamesrvController 实例
+        // 创建 NameServer Controller 实例
         NamesrvController controller = createNamesrvController();
-        // 启动 NamesrvController
+        // 启动 NameServer Controller
         start(controller);
         NettyServerConfig serverConfig = controller.getNettyServerConfig();
         String tip = String.format("The Name Server boot success. serializeType=%s, address %s:%d", RemotingCommand.getSerializeTypeConfigInThisServer(), serverConfig.getBindAddress(), serverConfig.getListenPort());
@@ -206,18 +206,24 @@ public class NamesrvStartup {
             throw new IllegalArgumentException("NamesrvController is null");
         }
 
-        // 初始化 NamesrvController
+        // 初始化 NameServer Controller
         boolean initResult = controller.initialize();
+        // 初始化是否完成
         if (!initResult) {
+            // 停止 NameServer Controller
             controller.shutdown();
+            // 异常退出
             System.exit(-3);
         }
 
+        // 添加 NameServer 关闭的 Hook 函数, 进行一些清理操作
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, (Callable<Void>) () -> {
+            // 停止 NameServer Controller
             controller.shutdown();
             return null;
         }));
 
+        // 启动 NameServer Controller
         controller.start();
 
         return controller;

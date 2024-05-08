@@ -113,7 +113,9 @@ public class NamesrvController {
         registerProcessor();
         // 开启定时任务
         startScheduleService();
+        // 初始化 Tls 安全模块, 监听网络加密配置文件的更改
         initiateSslContext();
+        // 注册 RPC Hooks
         initiateRpcHooks();
         return true;
     }
@@ -237,6 +239,7 @@ public class NamesrvController {
     }
 
     public void start() throws Exception {
+        // 启动 Netty 远程服务端
         this.remotingServer.start();
 
         // In test scenarios where it is up to OS to pick up an available port, set the listening port back to config
@@ -246,25 +249,36 @@ public class NamesrvController {
 
         this.remotingClient.updateNameServerAddressList(Collections.singletonList(NetworkUtil.getLocalAddress()
             + ":" + nettyServerConfig.getListenPort()));
+        // 启动 Netty 远程客户端
         this.remotingClient.start();
 
         if (this.fileWatchService != null) {
+            // 启动文件监测服务
             this.fileWatchService.start();
         }
 
+        // 启动路由信息管理器
         this.routeInfoManager.start();
     }
 
     public void shutdown() {
+        // 停止 Netty 远程客户端
         this.remotingClient.shutdown();
+        // 停止 Netty 远程服务端
         this.remotingServer.shutdown();
+        // 停止默认处理器
         this.defaultExecutor.shutdown();
+        // 停止客户端请求处理器
         this.clientRequestExecutor.shutdown();
+        // 停止调度定时任务执行器
         this.scheduledExecutorService.shutdown();
+        // 停止扫描定时任务执行器
         this.scanExecutorService.shutdown();
+        // 停止路由信息管理器
         this.routeInfoManager.shutdown();
 
         if (this.fileWatchService != null) {
+            // 停止文件监测服务
             this.fileWatchService.shutdown();
         }
     }
