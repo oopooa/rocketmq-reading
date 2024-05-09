@@ -45,11 +45,11 @@ rocketmq
 ---
 
 #### NameServer
-1. 服务启动 🚧
+1. 服务启动 ✅
 2. 心跳监测 ❌
 
 #### Broker
-1. 服务启动 ❌
+1. 服务启动 🚧
 
 #### Producer
 
