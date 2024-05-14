@@ -58,6 +58,9 @@ rocketmq
 
 
 ---
+🔧 Go to Issue
+- https://github.com/apache/rocketmq/issues/{issue}
+---
 > 原文档 👇👇👇
 
 **[Apache RocketMQ](https://rocketmq.apache.org) is a distributed messaging and streaming platform with low latency, high performance and reliability, trillion-level capacity and flexible scalability.**
