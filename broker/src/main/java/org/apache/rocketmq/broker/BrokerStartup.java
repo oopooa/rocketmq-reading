@@ -165,21 +165,29 @@ public class BrokerStartup {
             }
         }
 
+        // 如果当前 Broker 角色为 Slave
         if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {
+            // 默认 ratio = 40 - 10 = 30
             int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() - 10;
+            // 设置消息在内存中的最大比例
             messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
         }
 
-        // Set broker role according to ha config
+        // 根据高可用配置设置 Broker 角色
+        // 如果 Broker 没有开启 Controller 模式
         if (!brokerConfig.isEnableControllerMode()) {
             switch (messageStoreConfig.getBrokerRole()) {
                 case ASYNC_MASTER:
                 case SYNC_MASTER:
+                    // 设置 Master 的 BrokerId 为 0
                     brokerConfig.setBrokerId(MixAll.MASTER_ID);
                     break;
                 case SLAVE:
+                    // 如果 Slave 的 BrokerId 小于等于 0
                     if (brokerConfig.getBrokerId() <= MixAll.MASTER_ID) {
+                        // 输出异常信息
                         System.out.printf("Slave's brokerId must be > 0%n");
+                        // 异常退出
                         System.exit(-3);
                     }
                     break;
@@ -188,15 +196,21 @@ public class BrokerStartup {
             }
         }
 
+        // 如果消息存储配置启用了 DLedger 日志
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
+            // 设置 BrokerId 为 -1, 因为 DLedger 模式下, BrokerId 会自动分配
             brokerConfig.setBrokerId(-1);
         }
 
+        // 如果 Broker 启用了 Controller 模式并且消息存储配置启用了 DLedger CommitLog
         if (brokerConfig.isEnableControllerMode() && messageStoreConfig.isEnableDLegerCommitLog()) {
+            // 输出冲突信息
             System.out.printf("The config enableControllerMode and enableDLegerCommitLog cannot both be true.%n");
+            // 异常退出
             System.exit(-4);
         }
 
+        // 如果高可用端口仍然为 0, 说明没有配置过, 在此处进行默认配置
         if (messageStoreConfig.getHaListenPort() <= 0) {
             messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);
         }
