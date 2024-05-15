@@ -215,9 +215,11 @@ public class BrokerStartup {
             messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);
         }
 
+        // 通过 BrokerStartup 启动时, 该值为 false
         brokerConfig.setInBrokerContainer(false);
-
+        // 设置 Broker 日志路径
         System.setProperty("brokerLogDir", "");
+        // 是否日志隔离: 在同一个机器上有多个 Broker 部署时, 是否区分日志路径
         if (brokerConfig.isIsolateLogEnable()) {
             System.setProperty("brokerLogDir", brokerConfig.getBrokerName() + "_" + brokerConfig.getBrokerId());
         }
@@ -225,32 +227,46 @@ public class BrokerStartup {
             System.setProperty("brokerLogDir", brokerConfig.getBrokerName() + "_" + messageStoreConfig.getdLegerSelfId());
         }
 
+        // 检查命令行参数是否包含 -p 或 --printConfigItem
         if (commandLine.hasOption('p')) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
+            // 在控制台输出 Broker 配置详情
             MixAll.printObjectProperties(console, brokerConfig);
+            // 在控制台输出 NettyServer 配置详情
             MixAll.printObjectProperties(console, nettyServerConfig);
+            // 在控制台输出 NettyClient 配置详情
             MixAll.printObjectProperties(console, nettyClientConfig);
+            // 在控制台输出 Broker 消息存储配置详情
             MixAll.printObjectProperties(console, messageStoreConfig);
+            // 正常退出
             System.exit(0);
+            // 检查命令行参数是否包含 -m 或 --printImportantConfig
         } else if (commandLine.hasOption('m')) {
             Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
+            // 在控制台输出 Broker 重要配置详情
             MixAll.printObjectProperties(console, brokerConfig, true);
+            // 在控制台输出 NettyServer 重要配置详情
             MixAll.printObjectProperties(console, nettyServerConfig, true);
+            // 在控制台输出 NettyClient 重要配置详情
             MixAll.printObjectProperties(console, nettyClientConfig, true);
+            // 在控制台输出 Broker 消息存储重要配置详情
             MixAll.printObjectProperties(console, messageStoreConfig, true);
+            // 正常退出
             System.exit(0);
         }
 
         log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+        // 在日志文件中输出配置详情
         MixAll.printObjectProperties(log, brokerConfig);
         MixAll.printObjectProperties(log, nettyServerConfig);
         MixAll.printObjectProperties(log, nettyClientConfig);
         MixAll.printObjectProperties(log, messageStoreConfig);
 
+        // 创建 BrokerController 实例, 设置各种属性
         final BrokerController controller = new BrokerController(
             brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
 
-        // Remember all configs to prevent discard
+        // 从配置文件中加载的属性注册到 allConfigs 中
         controller.getConfiguration().registerConfig(properties);
 
         return controller;
@@ -281,9 +297,13 @@ public class BrokerStartup {
         try {
             // 根据命令行参数和配置文件构建一个 BrokerController 实例
             BrokerController controller = buildBrokerController(args);
+            // 初始化 BrokerController
             boolean initResult = controller.initialize();
+            // 初始化是否完成
             if (!initResult) {
+                // 停止 BrokerController
                 controller.shutdown();
+                // 异常退出
                 System.exit(-3);
             }
             Runtime.getRuntime().addShutdownHook(new Thread(buildShutdownHook(controller)));

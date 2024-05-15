@@ -757,6 +757,7 @@ public class BrokerController {
                 defaultMessageStore = new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener, this.brokerConfig, topicConfigManager.getTopicConfigTable());
             }
 
+            // 如果启用了 enableDLegerCommitLog, 就创建 DLedgerRoleChangeHandler 组件
             if (messageStoreConfig.isEnableDLegerCommitLog()) {
                 DLedgerRoleChangeHandler roleChangeHandler =
                     new DLedgerRoleChangeHandler(this, defaultMessageStore);
@@ -764,6 +765,7 @@ public class BrokerController {
                     .getdLedgerServer().getDLedgerLeaderElector().addRoleChangeHandler(roleChangeHandler);
             }
 
+            // 创建 Broker 状态统计实例
             this.brokerStats = new BrokerStats(defaultMessageStore);
 
             // Load store plugin
@@ -787,16 +789,19 @@ public class BrokerController {
 
     public boolean initialize() throws CloneNotSupportedException {
 
+        // 初始化元数据
         boolean result = this.initializeMetadata();
         if (!result) {
             return false;
         }
 
+        // 初始化消息存储
         result = this.initializeMessageStore();
         if (!result) {
             return false;
         }
 
+        // 数据恢复和初始化服务
         return this.recoverAndInitService();
     }
 
@@ -843,6 +848,7 @@ public class BrokerController {
 
             initialAcl();
 
+            // 注册 RPC Hooks
             initialRpcHooks();
 
             if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {

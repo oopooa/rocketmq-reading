@@ -235,7 +235,10 @@ public class MessageStoreConfig {
     private int transientStorePoolSize = 5;
     private boolean fastFailIfNoBufferInStorePool = false;
 
-    // DLedger message store config
+    /**
+     * DLedger 消息存储配置
+     * 开启之后, Broker通过 raft 协议选举 Master, 可以实现自动主从切换
+     */
     private boolean enableDLegerCommitLog = false;
     private String dLegerGroup;
     private String dLegerPeers;
