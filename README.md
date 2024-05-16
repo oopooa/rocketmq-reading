@@ -50,6 +50,7 @@ rocketmq
 
 #### Broker
 1. 服务启动 🚧
+2. 加载文件消息及数据恢复 🚧
 
 #### Producer
 
