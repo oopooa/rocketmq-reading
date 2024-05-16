@@ -338,14 +338,15 @@ public class DefaultMessageStore implements MessageStore {
         boolean result = true;
 
         try {
+            // 判断上次是否异常退出, 异常退出会保留 abort 文件, 里面保存了启动时的进程 id
             boolean lastExitOK = !this.isTempFileExist();
             LOGGER.info("last shutdown {}, store path root dir: {}",
                 lastExitOK ? "normally" : "abnormally", messageStoreConfig.getStorePathRootDir());
 
-            // load Commit Log
+            // 加载 Commit Log 日志文件, 它是真正存储消息内容的地方, 单个文件默认大小 1 GB
             result = this.commitLog.load();
 
-            // load Consume Queue
+            // 加载消费队列文件
             result = result && this.consumeQueueStore.load();
 
             if (messageStoreConfig.isEnableCompaction()) {
@@ -1860,8 +1861,10 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     private boolean isTempFileExist() {
+        // 获取异常终止文件路径 {storePathRootDir}/abort
         String fileName = StorePathConfigHelper.getAbortFile(this.messageStoreConfig.getStorePathRootDir());
         File file = new File(fileName);
+        // 判断文件是否存在
         return file.exists();
     }
 

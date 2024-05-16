@@ -815,7 +815,9 @@ public class BrokerController {
         }
 
         if (messageStore != null) {
+            // 注册消息收发的 Hook
             registerMessageStoreHook();
+            // 加载消息存储文件到内存中, 完成数据恢复
             result = this.messageStore.load();
         }
 

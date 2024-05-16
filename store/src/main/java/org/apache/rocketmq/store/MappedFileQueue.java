@@ -235,16 +235,19 @@ public class MappedFileQueue implements Swappable {
 
 
     public boolean load() {
+        // 获取 Commit Log 存储路径
         File dir = new File(this.storePath);
+        // 列出所有日志文件
         File[] ls = dir.listFiles();
         if (ls != null) {
+            // 加载日志文件列表
             return doLoad(Arrays.asList(ls));
         }
         return true;
     }
 
     public boolean doLoad(List<File> files) {
-        // ascending order
+        // 按照文件名升序排序
         files.sort(Comparator.comparing(File::getName));
 
         for (int i = 0; i < files.size(); i++) {
@@ -253,12 +256,15 @@ public class MappedFileQueue implements Swappable {
                 continue;
             }
 
+            // 如果列表里的最后一个是空文件
             if (file.length() == 0 && i == files.size() - 1) {
+                // 删除文件
                 boolean ok = file.delete();
                 log.warn("{} size is 0, auto delete. is_ok: {}", file, ok);
                 continue;
             }
 
+            // 如果文件实际大小和预定大小不一致
             if (file.length() != this.mappedFileSize) {
                 log.warn(file + "\t" + file.length()
                         + " length not matched message store config value, please check it manually");
@@ -266,10 +272,14 @@ public class MappedFileQueue implements Swappable {
             }
 
             try {
+                // 每个 Commit Log 文件创建对应的 MappedFile 对象
                 MappedFile mappedFile = new DefaultMappedFile(file.getPath(), mappedFileSize);
 
+                // 设置写入最新位置为文件大小
                 mappedFile.setWrotePosition(this.mappedFileSize);
+                // 设置刷盘最新位置为文件大小
                 mappedFile.setFlushedPosition(this.mappedFileSize);
+                // 设置提交最新位置为文件大小
                 mappedFile.setCommittedPosition(this.mappedFileSize);
                 this.mappedFiles.add(mappedFile);
                 log.info("load " + file.getPath() + " OK");

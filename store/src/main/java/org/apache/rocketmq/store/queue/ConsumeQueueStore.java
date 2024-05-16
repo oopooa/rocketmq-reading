@@ -195,18 +195,23 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     }
 
     private boolean loadConsumeQueues(String storePath, CQType cqType) {
+        // 消费列队文件目录
         File dirLogic = new File(storePath);
+        // 获取目录下的文件列表, 即 Topic 目录列表
         File[] fileTopicList = dirLogic.listFiles();
         if (fileTopicList != null) {
 
             for (File fileTopic : fileTopicList) {
+                // 获取 Topic 名称
                 String topic = fileTopic.getName();
 
+                // 继续获取下面的队列 id 目录
                 File[] fileQueueIdList = fileTopic.listFiles();
                 if (fileQueueIdList != null) {
                     for (File fileQueueId : fileQueueIdList) {
                         int queueId;
                         try {
+                            // 解析队列 id
                             queueId = Integer.parseInt(fileQueueId.getName());
                         } catch (NumberFormatException e) {
                             continue;

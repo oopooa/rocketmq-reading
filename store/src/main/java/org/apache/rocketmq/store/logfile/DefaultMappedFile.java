@@ -155,16 +155,22 @@ public class DefaultMappedFile extends AbstractMappedFile {
     }
 
     private void init(final String fileName, final int fileSize) throws IOException {
+        // 文件名, 长度为 20 位
         this.fileName = fileName;
+        // 文件大小, 默认 1G = 1073741824
         this.fileSize = fileSize;
         this.file = new File(fileName);
+        // 构建文件索引, 即取文件名
         this.fileFromOffset = Long.parseLong(this.file.getName());
         boolean ok = false;
 
+        // 确保文件目录存在
         UtilAll.ensureDirOK(this.file.getParent());
 
         try {
+            // 以当前 Commit Log 文件构建文件通道
             this.fileChannel = new RandomAccessFile(this.file, "rw").getChannel();
+            // 把 Commit Log 文件映射到内存, 提升读写性能
             this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
             TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
             TOTAL_MAPPED_FILES.incrementAndGet();
@@ -176,7 +182,9 @@ public class DefaultMappedFile extends AbstractMappedFile {
             log.error("Failed to map file " + this.fileName, e);
             throw e;
         } finally {
+            // 如果映射失败且文件通道已创建
             if (!ok && this.fileChannel != null) {
+                // 释放文件通道
                 this.fileChannel.close();
             }
         }
