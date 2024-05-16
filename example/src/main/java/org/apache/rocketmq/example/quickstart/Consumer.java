@@ -37,6 +37,7 @@ public class Consumer {
          * Instantiate with specified consumer group name.
          */
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(CONSUMER_GROUP);
+        consumer.setNamesrvAddr(DEFAULT_NAMESRVADDR);
 
         /*
          * Specify name server addresses.

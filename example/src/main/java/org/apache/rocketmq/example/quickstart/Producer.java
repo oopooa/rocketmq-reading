@@ -42,6 +42,7 @@ public class Producer {
          * Instantiate with a producer group name.
          */
         DefaultMQProducer producer = new DefaultMQProducer(PRODUCER_GROUP);
+        producer.setNamesrvAddr(DEFAULT_NAMESRVADDR);
 
         /*
          * Specify name server addresses.
