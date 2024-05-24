@@ -114,6 +114,7 @@ public class ConsumeQueue implements ConsumeQueueInterface, FileQueueLifeCycle {
         boolean result = this.mappedFileQueue.load();
         log.info("load consume queue " + this.topic + "-" + this.queueId + " " + (result ? "OK" : "Failed"));
         if (isExtReadEnable()) {
+            // 加载拓展消费队列
             result &= this.consumeQueueExt.load();
         }
         return result;

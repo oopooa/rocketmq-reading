@@ -31,17 +31,23 @@ public class QueueTypeUtils {
     }
 
     public static CQType getCQType(Optional<TopicConfig> topicConfig) {
+        // 如果 Topic 配置不存在
         if (!topicConfig.isPresent()) {
+            // 默认返回简单消费队列
             return CQType.valueOf(TopicAttributes.QUEUE_TYPE_ATTRIBUTE.getDefaultValue());
         }
 
         String attributeName = TopicAttributes.QUEUE_TYPE_ATTRIBUTE.getName();
 
+        // 获取 Topic 配置属性
         Map<String, String> attributes = topicConfig.get().getAttributes();
+        // 如果没有额外的属性
         if (attributes == null || attributes.size() == 0) {
+            // 默认返回简单消费队列
             return CQType.valueOf(TopicAttributes.QUEUE_TYPE_ATTRIBUTE.getDefaultValue());
         }
 
+        // 如果包含 queue.type, 则转换为对应队列类型
         if (attributes.containsKey(attributeName)) {
             return CQType.valueOf(attributes.get(attributeName));
         } else {

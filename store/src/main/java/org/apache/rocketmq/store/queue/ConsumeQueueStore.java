@@ -65,7 +65,9 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
 
     @Override
     public boolean load() {
+        // 加载简单消费队列
         boolean cqLoadResult = loadConsumeQueues(getStorePathConsumeQueue(this.messageStoreConfig.getStorePathRootDir()), CQType.SimpleCQ);
+        // 加载批量消费队列
         boolean bcqLoadResult = loadConsumeQueues(getStorePathBatchConsumeQueue(this.messageStoreConfig.getStorePathRootDir()), CQType.BatchCQ);
         return cqLoadResult && bcqLoadResult;
     }
@@ -186,6 +188,7 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     }
 
     private FileQueueLifeCycle getLifeCycle(String topic, int queueId) {
+        // 查询或创建对应 ConsumeQueue 实例
         return findOrCreateConsumeQueue(topic, queueId);
     }
 
@@ -217,10 +220,14 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
                             continue;
                         }
 
+                        // 检查消费队列文件中的 Topic 真实队列类型, 不匹配则抛出异常
                         queueTypeShouldBe(topic, cqType);
 
+                        // 每个队列 id 目录创建对应的 ConsumeQueue 对象
                         ConsumeQueueInterface logic = createConsumeQueueByType(cqType, topic, queueId, storePath);
+                        // 将当前 ConsumeQueue 对象及映射关系存入到 consumeQueueTable 中
                         this.putConsumeQueue(topic, queueId, logic);
+                        // 加载 ConsumeQueue 文件
                         if (!this.load(logic)) {
                             return false;
                         }
@@ -255,10 +262,13 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
     }
 
     private void queueTypeShouldBe(String topic, CQType cqTypeExpected) {
+        // 获取 Topic 对应配置
         Optional<TopicConfig> topicConfig = this.messageStore.getTopicConfig(topic);
 
+        // 获取 Topic 的真实消费队列类型, 有配置则读取, 否则默认为简单消费队列
         CQType cqTypeActual = QueueTypeUtils.getCQType(topicConfig);
 
+        // 如果队列类型不匹配
         if (!Objects.equals(cqTypeExpected, cqTypeActual)) {
             throw new RuntimeException(format("The queue type of topic: %s should be %s, but is %s", topic, cqTypeExpected, cqTypeActual));
         }
@@ -373,6 +383,7 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
 
     @Override
     public ConsumeQueueInterface findOrCreateConsumeQueue(String topic, int queueId) {
+        // 获取指定 Topic 下的 ConsumeQueue 映射关系
         ConcurrentMap<Integer, ConsumeQueueInterface> map = consumeQueueTable.get(topic);
         if (null == map) {
             ConcurrentMap<Integer, ConsumeQueueInterface> newMap = new ConcurrentHashMap<>(128);
@@ -384,6 +395,7 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
             }
         }
 
+        // 获取指定队列 id 下的 ConsumeQueue 对象, 如果不为空, 则直接返回
         ConsumeQueueInterface logic = map.get(queueId);
         if (logic != null) {
             return logic;
@@ -393,7 +405,9 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
 
         Optional<TopicConfig> topicConfig = this.messageStore.getTopicConfig(topic);
         // TODO maybe the topic has been deleted.
+        // 如果当前 Topic 配置为批量消费队列
         if (Objects.equals(CQType.BatchCQ, QueueTypeUtils.getCQType(topicConfig))) {
+            // 创建批量消费队列实例
             newLogic = new BatchConsumeQueue(
                 topic,
                 queueId,
@@ -401,6 +415,7 @@ public class ConsumeQueueStore extends AbstractConsumeQueueStore {
                 this.messageStoreConfig.getMapperFileSizeBatchConsumeQueue(),
                 this.messageStore);
         } else {
+            // 创建简单消费队列实例
             newLogic = new ConsumeQueue(
                 topic,
                 queueId,
