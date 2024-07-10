@@ -349,11 +349,13 @@ public class DefaultMessageStore implements MessageStore {
             // 加载消费队列文件
             result = result && this.consumeQueueStore.load();
 
+            // 是否启用 topic 压缩
             if (messageStoreConfig.isEnableCompaction()) {
                 result = result && this.compactionService.load(lastExitOK);
             }
 
             if (result) {
+                // 加载 checkpoint 检查点文件
                 this.storeCheckpoint =
                     new StoreCheckpoint(
                         StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));
