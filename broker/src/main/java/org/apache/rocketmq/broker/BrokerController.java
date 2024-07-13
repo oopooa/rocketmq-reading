@@ -821,7 +821,9 @@ public class BrokerController {
             result = this.messageStore.load();
         }
 
+        // 是否启用时间轮
         if (messageStoreConfig.isTimerWheelEnable()) {
+            // 加载定时消息存储服务
             result = result && this.timerMessageStore.load();
         }
 

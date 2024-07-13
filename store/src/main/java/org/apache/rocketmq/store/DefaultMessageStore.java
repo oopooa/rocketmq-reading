@@ -362,7 +362,9 @@ public class DefaultMessageStore implements MessageStore {
                 this.masterFlushedOffset = this.storeCheckpoint.getMasterFlushedOffset();
                 setConfirmOffset(this.storeCheckpoint.getConfirmPhyOffset());
 
+                // 加载 index 索引文件
                 result = this.indexService.load(lastExitOK);
+                // 恢复 consumeQueue 和 commitLog 文件, 正确的数据恢复到内存中, 删除错误的数据和文件
                 this.recover(lastExitOK);
                 LOGGER.info("message store recover end, and the max phy offset = {}", this.getMaxPhyOffset());
             }
@@ -376,7 +378,9 @@ public class DefaultMessageStore implements MessageStore {
             result = false;
         }
 
+        // 如果恢复失败
         if (!result) {
+            // 文件服务停止
             this.allocateMappedFileService.shutdown();
         }
 
