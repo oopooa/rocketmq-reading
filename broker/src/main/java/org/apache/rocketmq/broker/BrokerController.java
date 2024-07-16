@@ -441,15 +441,19 @@ public class BrokerController {
     }
 
     protected void initializeRemotingServer() throws CloneNotSupportedException {
+        // 创建 Netty 远程服务, 用于处理客户端所有请求
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.clientHousekeepingService);
+        // 克隆一个 Netty 服务配置作为快速 Netty 远程服务的配置
         NettyServerConfig fastConfig = (NettyServerConfig) this.nettyServerConfig.clone();
 
+        // 设置快速 Netty 远程服务的端口为普通服务的端口 — 2, 默认为 10909
         int listeningPort = nettyServerConfig.getListenPort() - 2;
         if (listeningPort < 0) {
             listeningPort = 0;
         }
         fastConfig.setListenPort(listeningPort);
 
+        // 创建快速 Netty 远程服务, 用于处理客户端除了拉取消息之外的所有请求, 也就是所谓的 VIP 端口
         this.fastRemotingServer = new NettyRemotingServer(fastConfig, this.clientHousekeepingService);
     }
 
@@ -827,7 +831,7 @@ public class BrokerController {
             result = result && this.timerMessageStore.load();
         }
 
-        //scheduleMessageService load after messageStore load success
+        // 调度消息服务在消息存储服务加载成功后才加载
         result = result && this.scheduleMessageService.load();
 
         for (BrokerAttachedPlugin brokerAttachedPlugin : brokerAttachedPlugins) {
@@ -836,10 +840,12 @@ public class BrokerController {
             }
         }
 
+        // 初始化 Broker 指标收集组件, 用于监控 Broker 的运行状态
         this.brokerMetricsManager = new BrokerMetricsManager(this);
 
+        // 如果前面的组件加载都成功了
         if (result) {
-
+            // 初始化 Netty 远程服务
             initializeRemotingServer();
 
             initializeResources();
