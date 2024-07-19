@@ -461,9 +461,11 @@ public class BrokerController {
      * Initialize resources including remoting server and thread executors.
      */
     protected void initializeResources() {
+        // 创建定时调度任务线程池
         this.scheduledExecutorService = ThreadUtils.newScheduledThreadPool(1,
             new ThreadFactoryImpl("BrokerControllerScheduledThread", true, getBrokerIdentity()));
 
+        // 创建消息发送请求的线程池
         this.sendMessageExecutor = ThreadUtils.newThreadPoolExecutor(
             this.brokerConfig.getSendMessageThreadPoolNums(),
             this.brokerConfig.getSendMessageThreadPoolNums(),
@@ -472,6 +474,7 @@ public class BrokerController {
             this.sendThreadPoolQueue,
             new ThreadFactoryImpl("SendMessageThread_", getBrokerIdentity()));
 
+        // 创建消息拉取请求的线程池
         this.pullMessageExecutor = ThreadUtils.newThreadPoolExecutor(
             this.brokerConfig.getPullMessageThreadPoolNums(),
             this.brokerConfig.getPullMessageThreadPoolNums(),
@@ -504,6 +507,7 @@ public class BrokerController {
             this.ackThreadPoolQueue,
             new ThreadFactoryImpl("AckMessageThread_", getBrokerIdentity()));
 
+        // 创建消息查询请求的线程池
         this.queryMessageExecutor = ThreadUtils.newThreadPoolExecutor(
             this.brokerConfig.getQueryMessageThreadPoolNums(),
             this.brokerConfig.getQueryMessageThreadPoolNums(),
@@ -520,6 +524,7 @@ public class BrokerController {
             this.adminBrokerThreadPoolQueue,
             new ThreadFactoryImpl("AdminBrokerThread_", getBrokerIdentity()));
 
+        // 创建处理客户端管理请求的线程池
         this.clientManageExecutor = ThreadUtils.newThreadPoolExecutor(
             this.brokerConfig.getClientManageThreadPoolNums(),
             this.brokerConfig.getClientManageThreadPoolNums(),
@@ -528,6 +533,7 @@ public class BrokerController {
             this.clientManagerThreadPoolQueue,
             new ThreadFactoryImpl("ClientManageThread_", getBrokerIdentity()));
 
+        // 创建处理心跳请求的线程池
         this.heartbeatExecutor = ThreadUtils.newThreadPoolExecutor(
             this.brokerConfig.getHeartbeatThreadPoolNums(),
             this.brokerConfig.getHeartbeatThreadPoolNums(),
@@ -536,6 +542,7 @@ public class BrokerController {
             this.heartbeatThreadPoolQueue,
             new ThreadFactoryImpl("HeartbeatThread_", true, getBrokerIdentity()));
 
+        // 创建处理消费者管理请求的线程池
         this.consumerManageExecutor = ThreadUtils.newThreadPoolExecutor(
             this.brokerConfig.getConsumerManageThreadPoolNums(),
             this.brokerConfig.getConsumerManageThreadPoolNums(),
@@ -552,6 +559,7 @@ public class BrokerController {
             this.replyThreadPoolQueue,
             new ThreadFactoryImpl("ProcessReplyMessageThread_", getBrokerIdentity()));
 
+        // 创建事务相关消息处理的线程池
         this.endTransactionExecutor = ThreadUtils.newThreadPoolExecutor(
             this.brokerConfig.getEndTransactionThreadPoolNums(),
             this.brokerConfig.getEndTransactionThreadPoolNums(),
@@ -848,6 +856,7 @@ public class BrokerController {
             // 初始化 Netty 远程服务
             initializeRemotingServer();
 
+            // 初始化线程池资源
             initializeResources();
 
             registerProcessor();
