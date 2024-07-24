@@ -710,6 +710,7 @@ public class BrokerController {
 
     protected void initializeScheduledTasks() {
 
+        // 初始化 Broker 的定时任务
         initializeBrokerScheduledTasks();
 
         if (this.brokerConfig.getNamesrvAddr() != null) {
@@ -859,17 +860,22 @@ public class BrokerController {
             // 初始化线程池资源
             initializeResources();
 
+            // 注册消息处理器
             registerProcessor();
 
+            // 初始化定时任务
             initializeScheduledTasks();
 
+            // 初始化事务消息相关服务
             initialTransaction();
 
+            // 初始化权限校验器
             initialAcl();
 
             // 注册 RPC Hooks
             initialRpcHooks();
 
+            // 判断 TLS 加密模式是否启用, 默认为兼容模式
             if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {
                 // Register a listener to reload SslContext
                 try {
@@ -996,6 +1002,7 @@ public class BrokerController {
     }
 
     private void initialAcl() {
+        // 是否开启了权限校验, 默认为 false
         if (!this.brokerConfig.isAclEnable()) {
             LOG.info("The broker dose not enable acl");
             return;
@@ -1038,8 +1045,9 @@ public class BrokerController {
     }
 
     public void registerProcessor() {
+
         /*
-         * SendMessageProcessor
+         * 发送消息处理器
          */
         sendMessageProcessor.registerSendMessageHook(sendMessageHookList);
         sendMessageProcessor.registerConsumeMessageHook(consumeMessageHookList);
