@@ -547,15 +547,20 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     @ChannelHandler.Sharable
     public class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 
+        // Netty 服务端接收消息入口 🚪
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg) {
+            // 获取当前通道的本地端口号
             int localPort = RemotingHelper.parseSocketAddressPort(ctx.channel().localAddress());
+            // 通过端口号获取对应的 Netty 远程服务实例
             NettyRemotingAbstract remotingAbstract = NettyRemotingServer.this.remotingServerTable.get(localPort);
+            // 判断端口号有效且对应的 Netty 远程服务实例存在
             if (localPort != -1 && remotingAbstract != null) {
+                // 用对应的实例处理接收到的消息
                 remotingAbstract.processMessageReceived(ctx, msg);
                 return;
             }
-            // The related remoting server has been shutdown, so close the connected channel
+            // 相关远程服务已经停止, 关闭当前连接通道
             RemotingHelper.closeChannel(ctx.channel());
         }
 

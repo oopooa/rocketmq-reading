@@ -268,6 +268,7 @@ public class RemotingHelper {
 
     public static Integer parseSocketAddressPort(SocketAddress socketAddress) {
         if (socketAddress instanceof InetSocketAddress) {
+            // 获取地址端口
             return ((InetSocketAddress) socketAddress).getPort();
         }
         return -1;

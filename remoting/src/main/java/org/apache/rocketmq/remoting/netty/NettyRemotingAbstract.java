@@ -157,26 +157,20 @@ public abstract class NettyRemotingAbstract {
     }
 
     /**
-     * Entry of incoming command processing.
-     *
-     * <p>
-     * <strong>Note:</strong>
-     * The incoming remoting command may be
+     * 处理 RemotingCommand 命令消息, 传入的远程命令可能是：
      * <ul>
-     * <li>An inquiry request from a remote peer component;</li>
-     * <li>A response to a previous request issued by this very participant.</li>
+     * <li>1. 远程对等组件的查询请求</li>
+     * <li>2. 该参与者之前发出请求的响应</li>
      * </ul>
-     * </p>
-     *
-     * @param ctx Channel handler context.
-     * @param msg incoming remoting command.
      */
     public void processMessageReceived(ChannelHandlerContext ctx, RemotingCommand msg) {
         if (msg != null) {
             switch (msg.getType()) {
+                // 处理来源服务器端的请求命令
                 case REQUEST_COMMAND:
                     processRequestCommand(ctx, msg);
                     break;
+                // 处理来源服务器端的响应命令
                 case RESPONSE_COMMAND:
                     processResponseCommand(ctx, msg);
                     break;
@@ -253,8 +247,11 @@ public abstract class NettyRemotingAbstract {
      * @param cmd request command.
      */
     public void processRequestCommand(final ChannelHandlerContext ctx, final RemotingCommand cmd) {
+        // 根据请求 code 在本地缓存变量中寻找对应的请求处理器以及线程池资源
         final Pair<NettyRequestProcessor, ExecutorService> matched = this.processorTable.get(cmd.getCode());
+        // 如果没找到对应的处理器, 则返回一个默认的请求处理器
         final Pair<NettyRequestProcessor, ExecutorService> pair = null == matched ? this.defaultRequestProcessorPair : matched;
+        // 获取请求唯一 id, 从 0 开始自增
         final int opaque = cmd.getOpaque();
 
         if (pair == null) {
