@@ -294,6 +294,7 @@ public abstract class NettyRemotingAbstract {
                 // 构建 go away 响应
                 final RemotingCommand response = RemotingCommand.createResponseCommand(ResponseCode.GO_AWAY,
                     "please go away");
+                // 设置请求 id
                 response.setOpaque(opaque);
                 // 返回响应, 让客户端重新选一个 channel 请求
                 writeResponse(ctx.channel(), cmd, response);
@@ -306,6 +307,7 @@ public abstract class NettyRemotingAbstract {
             // 构建系统繁忙响应
             final RemotingCommand response = RemotingCommand.createResponseCommand(RemotingSysResponseCode.SYSTEM_BUSY,
                 "[REJECTREQUEST]system busy, start flow control for a while");
+            // 设置请求 id
             response.setOpaque(opaque);
             // 返回响应
             writeResponse(ctx.channel(), cmd, response);
@@ -390,10 +392,14 @@ public abstract class NettyRemotingAbstract {
                 log.error("process request exception", e);
                 log.error(cmd.toString());
 
+                // 如果不是单向消息
                 if (!cmd.isOnewayRPC()) {
+                    // 构建异常响应
                     response = RemotingCommand.createResponseCommand(RemotingSysResponseCode.SYSTEM_ERROR,
                         UtilAll.exceptionSimpleDesc(e));
+                    // 设置请求 id
                     response.setOpaque(opaque);
+                    // 返回响应
                     writeResponse(ctx.channel(), cmd, response);
                 }
             }
