@@ -18,3 +18,7 @@ bazel-bin
 bazel-rocketmq
 bazel-testlogs
 .vscode
+
+# local working
+/home/logs
+/home/store
