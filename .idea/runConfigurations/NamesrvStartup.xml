@@ -1,0 +1,21 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="NamesrvStartup" type="Application" factoryName="Application" nameIsGenerated="true">
+    <envs>
+      <env name="ROCKETMQ_HOME" value="$PROJECT_DIR$/distribution" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="org.apache.rocketmq.namesrv.NamesrvStartup" />
+    <module name="rocketmq-namesrv" />
+    <option name="PROGRAM_PARAMETERS" value="-n localhost:9876" />
+    <option name="VM_PARAMETERS" value="-Duser.home=$PROJECT_DIR$/home" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="org.apache.rocketmq.namesrv.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
