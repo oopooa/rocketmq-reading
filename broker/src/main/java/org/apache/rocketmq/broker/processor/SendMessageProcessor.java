@@ -87,10 +87,13 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
     public RemotingCommand processRequest(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
         SendMessageContext sendMessageContext;
+        // 根据请求 code 选择处理方式
         switch (request.getCode()) {
             case RequestCode.CONSUMER_SEND_MSG_BACK:
                 return this.consumerSendMsgBack(ctx, request);
+            // 其他情况, 都属于生产者发送消息的请求
             default:
+                // 解析请求头
                 SendMessageRequestHeader requestHeader = parseRequestHeader(request);
                 if (requestHeader == null) {
                     return null;
@@ -100,12 +103,15 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                 if (rewriteResult != null) {
                     return rewriteResult;
                 }
+                // 构建消息发送环境
                 sendMessageContext = buildMsgContext(ctx, requestHeader, request);
                 try {
+                    // 执行发送消息前置钩子函数
                     this.executeSendMessageHookBefore(sendMessageContext);
                 } catch (AbortProcessException e) {
                     final RemotingCommand errorResponse = RemotingCommand.createResponseCommand(e.getResponseCode(), e.getErrorMessage());
                     errorResponse.setOpaque(request.getOpaque());
+                    // 返回异常响应
                     return errorResponse;
                 }
 
@@ -113,10 +119,14 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                 clearReservedProperties(requestHeader);
 
                 if (requestHeader.isBatch()) {
+                    // 发送批量消息
                     response = this.sendBatchMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
+                        // 执行发送消息后置钩子函数
                         (ctx1, response1) -> executeSendMessageHookAfter(response1, ctx1));
                 } else {
+                    // 发送其他消息, 比如单条消息
                     response = this.sendMessage(ctx, request, sendMessageContext, requestHeader, mappingContext,
+                        // 执行发送消息后置钩子函数
                         (ctx12, response12) -> executeSendMessageHookAfter(response12, ctx12));
                 }
 
