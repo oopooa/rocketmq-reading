@@ -256,7 +256,9 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         final SendMessageCallback sendMessageCallback) throws RemotingCommandException {
 
         final RemotingCommand response = preSend(ctx, request, requestHeader);
+        // 如果响应 code 不为 -1, 则表示异常
         if (response.getCode() != -1) {
+            // 直接返回
             return response;
         }
 
@@ -684,24 +686,33 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
     private RemotingCommand preSend(ChannelHandlerContext ctx, RemotingCommand request,
         SendMessageRequestHeader requestHeader) {
+        // 创建响应命令实例
         final RemotingCommand response = RemotingCommand.createResponseCommand(SendMessageResponseHeader.class);
 
+        // 设置请求 id
         response.setOpaque(request.getOpaque());
 
+        // 添加拓展字段 “MSG_REGION”, "TRACE_ON"
         response.addExtField(MessageConst.PROPERTY_MSG_REGION, this.brokerController.getBrokerConfig().getRegionId());
         response.addExtField(MessageConst.PROPERTY_TRACE_SWITCH, String.valueOf(this.brokerController.getBrokerConfig().isTraceOn()));
 
         LOGGER.debug("Receive SendMessage request command {}", request);
 
+        // 获取 Broker 配置的能开始处理请求的时间戳, 默认为 0
         final long startTimestamp = this.brokerController.getBrokerConfig().getStartAcceptSendRequestTimeStamp();
 
+        // 如果当前时间小于起始时间, 说明 Broker 还不能提供服务
         if (this.brokerController.getMessageStore().now() < startTimestamp) {
+            // 设置系统异常响应
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(String.format("broker unable to service, until %s", UtilAll.timeMillisToHumanString2(startTimestamp)));
+            // 返回响应
             return response;
         }
 
+        // 设置响应 code 为 -1, 表示正常
         response.setCode(-1);
+        // 消息校验
         super.msgCheck(ctx, requestHeader, request, response);
 
         return response;

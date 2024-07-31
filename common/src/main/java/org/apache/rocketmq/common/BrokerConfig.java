@@ -149,6 +149,11 @@ public class BrokerConfig extends BrokerIdentity {
     private long waitTimeMillsInTransactionQueue = 3 * 1000;
     private long waitTimeMillsInAckQueue = 3000;
 
+    /**
+     * 开始接受请求处理的时间戳
+     * <p>
+     * 只能通过配置文件配置
+     */
     private long startAcceptSendRequestTimeStamp = 0L;
 
     private boolean traceOn = true;
