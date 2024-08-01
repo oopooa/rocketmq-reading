@@ -103,18 +103,22 @@ public class TopicValidator {
 
     public static ValidateTopicResult validateTopic(String topic) {
 
+        // topic 名称不能为空
         if (UtilAll.isBlank(topic)) {
             return new ValidateTopicResult(false, "The specified topic is blank.");
         }
 
+        // 校验 topic 名称是否包含非法字符 (除大小写字母、数字、%、|、_、-以外的所有字符)
         if (isTopicOrGroupIllegal(topic)) {
             return new ValidateTopicResult(false, "The specified topic contains illegal characters, allowing only ^[%|a-zA-Z0-9_-]+$");
         }
 
+        // topic 的长度不能超过 127 个字符
         if (topic.length() > TOPIC_MAX_LENGTH) {
             return new ValidateTopicResult(false, "The specified topic is longer than topic max length.");
         }
 
+        // 返回正确的校验结果
         return new ValidateTopicResult(true, "");
     }
 

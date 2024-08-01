@@ -459,28 +459,40 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
     protected RemotingCommand msgCheck(final ChannelHandlerContext ctx,
         final SendMessageRequestHeader requestHeader, final RemotingCommand request,
         final RemotingCommand response) {
+        // 如果当前 Broker 没有写的权限, 并且当前 topic 为顺序 topic
         if (!PermName.isWriteable(this.brokerController.getBrokerConfig().getBrokerPermission())
             && this.brokerController.getTopicConfigManager().isOrderTopic(requestHeader.getTopic())) {
+            // 响应设置无权限的异常 code
             response.setCode(ResponseCode.NO_PERMISSION);
             response.setRemark("the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1()
                 + "] sending message is forbidden");
+            // 对于顺序 topic, 如果消息发送失败, 需要立即返回响应, 避免影响业务数据的正确性
             return response;
         }
 
+        // 校验 topic 信息
         TopicValidator.ValidateTopicResult result = TopicValidator.validateTopic(requestHeader.getTopic());
+        // 如果校验不通过
         if (!result.isValid()) {
+            // 构建系统异常响应
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(result.getRemark());
+            // 返回响应
             return response;
         }
+        // 如果当前 topic 是不允许使用的系统 topic, 比如 RMQ_SYS_TRANS_HALF_TOPIC 等等
         if (TopicValidator.isNotAllowedSendTopic(requestHeader.getTopic())) {
+            // 构建权限不足响应
             response.setCode(ResponseCode.NO_PERMISSION);
             response.setRemark("Sending message to topic[" + requestHeader.getTopic() + "] is forbidden.");
+            // 返回响应
             return response;
         }
 
+        // 从 Broker 的 topicConfigTable 缓存中查询 topic 配置
         TopicConfig topicConfig =
             this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
+        // 如果 topic 不存在
         if (null == topicConfig) {
             int topicSysFlag = 0;
             if (requestHeader.isUnitMode()) {
@@ -492,6 +504,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             }
 
             LOGGER.warn("the topic {} not exist, producer: {}", requestHeader.getTopic(), ctx.channel().remoteAddress());
+            // 尝试创建普通 topic
             topicConfig = this.brokerController.getTopicConfigManager().createTopicInSendMessageMethod(
                 requestHeader.getTopic(),
                 requestHeader.getDefaultTopic(),
@@ -515,9 +528,13 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             }
         }
 
+        // 获取队列 id
         int queueIdInt = requestHeader.getQueueId();
+        // 获取该 topic 读队列或写队列数量的最大值, 作为队列 id 的最大有效值
         int idValid = Math.max(topicConfig.getWriteQueueNums(), topicConfig.getReadQueueNums());
+        // 如果队列 id 大于了其最大有效值
         if (queueIdInt >= idValid) {
+            // 构建异常信息
             String errorInfo = String.format("request queueId[%d] is illegal, %s Producer: %s",
                 queueIdInt,
                 topicConfig,
