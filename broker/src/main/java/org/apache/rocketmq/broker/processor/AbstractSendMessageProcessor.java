@@ -541,6 +541,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
                 RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
 
             LOGGER.warn(errorInfo);
+            // 设置系统异常
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(errorInfo);
 

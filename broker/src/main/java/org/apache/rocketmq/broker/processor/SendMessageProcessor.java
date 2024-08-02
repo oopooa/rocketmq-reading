@@ -262,40 +262,57 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             return response;
         }
 
+        // 获取响应头
         final SendMessageResponseHeader responseHeader = (SendMessageResponseHeader) response.readCustomHeader();
 
+        // 获取消息体
         final byte[] body = request.getBody();
 
+        // 获取队列 id
         int queueIdInt = requestHeader.getQueueId();
+        // 从 Broker 的 topicConfigTable 缓存中查询 topic 配置
         TopicConfig topicConfig = this.brokerController.getTopicConfigManager().selectTopicConfig(requestHeader.getTopic());
 
+        // 如果队列 id 小于 0
         if (queueIdInt < 0) {
+            // 则随机选择一个写队列索引作为队列 id
             queueIdInt = randomQueueId(topicConfig.getWriteQueueNums());
         }
 
+        // 创建消息实例
         MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
+        // 设置消息的 topic
         msgInner.setTopic(requestHeader.getTopic());
+        // 设置消息的队列 id
         msgInner.setQueueId(queueIdInt);
 
         Map<String, String> oriProps = MessageDecoder.string2messageProperties(requestHeader.getProperties());
+        // 处理重试和死信队列消息
         if (!handleRetryAndDLQ(requestHeader, response, request, msgInner, topicConfig, oriProps)) {
             return response;
         }
 
+        // 设置消息体
         msgInner.setBody(body);
         msgInner.setFlag(requestHeader.getFlag());
 
+        // 从属性中取出唯一 key
         String uniqKey = oriProps.get(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX);
+        // 如果唯一 key 是空的
         if (uniqKey == null || uniqKey.length() <= 0) {
+            // 则生成一个唯一 key
             uniqKey = MessageClientIDSetter.createUniqID();
+            // 放回到属性中
             oriProps.put(MessageConst.PROPERTY_UNIQ_CLIENT_MESSAGE_ID_KEYIDX, uniqKey);
         }
 
+        // 将属性设置到消息中
         MessageAccessor.setProperties(msgInner, oriProps);
 
         CleanupPolicy cleanupPolicy = CleanupPolicyUtils.getDeletePolicy(Optional.of(topicConfig));
         if (Objects.equals(cleanupPolicy, CleanupPolicy.COMPACTION)) {
             if (StringUtils.isBlank(msgInner.getKeys())) {
+                // 构建非法消息响应
                 response.setCode(ResponseCode.MESSAGE_ILLEGAL);
                 response.setRemark("Required message key is missing");
                 return response;
@@ -312,8 +329,9 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
         msgInner.setPropertiesString(MessageDecoder.messageProperties2String(msgInner.getProperties()));
 
-        // Map<String, String> oriProps = MessageDecoder.string2messageProperties(requestHeader.getProperties());
+        // 获取消息事务标识
         String traFlag = oriProps.get(MessageConst.PROPERTY_TRANSACTION_PREPARED);
+        // 是否发送事务准备消息
         boolean sendTransactionPrepareMessage;
         if (Boolean.parseBoolean(traFlag)
             && !(msgInner.getReconsumeTimes() > 0 && msgInner.getDelayTimeLevel() > 0)) { //For client under version 4.6.1
@@ -331,21 +349,29 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
         long beginTimeMillis = this.brokerController.getMessageStore().now();
 
+        // 如果启用了异步发送
         if (brokerController.getBrokerConfig().isAsyncSendEnable()) {
             CompletableFuture<PutMessageResult> asyncPutMessageFuture;
+            // 是否发送事务准备消息
             if (sendTransactionPrepareMessage) {
+                // 异步处理事务准备消息
                 asyncPutMessageFuture = this.brokerController.getTransactionalMessageService().asyncPrepareMessage(msgInner);
             } else {
+                // 异步发送存储消息
                 asyncPutMessageFuture = this.brokerController.getMessageStore().asyncPutMessage(msgInner);
             }
 
             final int finalQueueIdInt = queueIdInt;
             final MessageExtBrokerInner finalMsgInner = msgInner;
+            // 在独立的线程中处理响应结果, 避免阻塞
             asyncPutMessageFuture.thenAcceptAsync(putMessageResult -> {
+                // 处理消息发送结果为响应
                 RemotingCommand responseFuture =
                     handlePutMessageResult(putMessageResult, response, request, finalMsgInner, responseHeader, sendMessageContext,
                         ctx, finalQueueIdInt, beginTimeMillis, mappingContext, BrokerMetricsManager.getMessageType(requestHeader));
+                // 如果响应不为空
                 if (responseFuture != null) {
+                    // 发送响应
                     doResponse(ctx, request, responseFuture);
                 }
 
@@ -354,22 +380,26 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                     this.brokerController.getTransactionalMessageService().getTransactionMetrics().addAndGet(msgInner.getProperty(MessageConst.PROPERTY_REAL_TOPIC), 1);
                 }
 
+                // 调用发送消息完成的回调
                 sendMessageCallback.onComplete(sendMessageContext, response);
             }, this.brokerController.getPutMessageFutureExecutor());
-            // Returns null to release the send message thread
+            // 返回空释放发送消息的线程
             return null;
         } else {
+            // 同步发送消息
             PutMessageResult putMessageResult = null;
             if (sendTransactionPrepareMessage) {
                 putMessageResult = this.brokerController.getTransactionalMessageService().prepareMessage(msgInner);
             } else {
                 putMessageResult = this.brokerController.getMessageStore().putMessage(msgInner);
             }
+            // 处理消息发送结果
             handlePutMessageResult(putMessageResult, response, request, msgInner, responseHeader, sendMessageContext, ctx, queueIdInt, beginTimeMillis, mappingContext, BrokerMetricsManager.getMessageType(requestHeader));
             // record the transaction metrics
             if (putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK && putMessageResult.getAppendMessageResult().isOk()) {
                 this.brokerController.getTransactionalMessageService().getTransactionMetrics().addAndGet(msgInner.getProperty(MessageConst.PROPERTY_REAL_TOPIC), 1);
             }
+            // 调用发送消息完成的回调
             sendMessageCallback.onComplete(sendMessageContext, response);
             return response;
         }
@@ -379,33 +409,41 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         RemotingCommand request, MessageExt msg, SendMessageResponseHeader responseHeader,
         SendMessageContext sendMessageContext, ChannelHandlerContext ctx, int queueIdInt, long beginTimeMillis,
         TopicQueueMappingContext mappingContext, TopicMessageType messageType) {
+        // 如果发送消息结果为空
         if (putMessageResult == null) {
+            // 构建系统异常响应
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark("store putMessage return null");
             return response;
         }
+        // 默认发送失败
         boolean sendOK = false;
 
+        // 判断发送消息的状态
         switch (putMessageResult.getPutMessageStatus()) {
-            // Success
+            // 成功
+            // 消息发送成功
             case PUT_OK:
                 sendOK = true;
                 response.setCode(ResponseCode.SUCCESS);
                 break;
+            // 消息发送成功但是服务器刷盘超时
             case FLUSH_DISK_TIMEOUT:
                 response.setCode(ResponseCode.FLUSH_DISK_TIMEOUT);
                 sendOK = true;
                 break;
+            // 消息发送成功, 但是服务器同步到 Slave 时超时
             case FLUSH_SLAVE_TIMEOUT:
                 response.setCode(ResponseCode.FLUSH_SLAVE_TIMEOUT);
                 sendOK = true;
                 break;
+            // 消息发送成功, 但是此时 Slave 不可用
             case SLAVE_NOT_AVAILABLE:
                 response.setCode(ResponseCode.SLAVE_NOT_AVAILABLE);
                 sendOK = true;
                 break;
 
-            // Failed
+            // 失败
             case IN_SYNC_REPLICAS_NOT_ENOUGH:
                 response.setCode(ResponseCode.SYSTEM_ERROR);
                 response.setRemark("in-sync replicas not enough");
