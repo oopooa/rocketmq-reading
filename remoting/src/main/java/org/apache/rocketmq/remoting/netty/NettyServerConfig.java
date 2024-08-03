@@ -23,12 +23,46 @@ public class NettyServerConfig implements Cloneable {
      * By default, it's wildcard address, listening all network interfaces.
      */
     private String bindAddress = "0.0.0.0";
+
+    /**
+     * 监听端口
+     */
     private int listenPort = 0;
+
+    /**
+     * 业务线程池线程个数
+     */
     private int serverWorkerThreads = 8;
+
+    /**
+     * public 任务线程池个数
+     * <p>
+     * Netty 网络根据业务类型创建不同的线程池, 比如消息发送、心跳检测等。
+     * 如果该业务类型未注册线程池, 则由 public 线程池执行。
+     * 默认被初始化为 4
+     */
     private int serverCallbackExecutorThreads = 0;
+
+    /**
+     * I/O 线程池线程个数, 这类线程主要是用于处理网络请求, 先解析请求包,
+     * 然后转发到各个业务线程池完成具体的业务操作
+     */
     private int serverSelectorThreads = 3;
+
+    /**
+     * 单向消息请求的最大并发度 (Broker 端参数)
+     */
     private int serverOnewaySemaphoreValue = 256;
+
+    /**
+     * 异步消息发送的最大并发度 (Broker 端参数)
+     */
     private int serverAsyncSemaphoreValue = 64;
+
+    /**
+     * 网络连接最大空闲时间, 默认为 120 秒, 如果连接空闲时间
+     * 超过该参数的值, 连接将被关闭
+     */
     private int serverChannelMaxIdleTimeSeconds = 120;
 
     private int serverSocketSndBufSize = NettySystemConfig.socketSndbufSize;
@@ -42,6 +76,8 @@ public class NettyServerConfig implements Cloneable {
     private int shutdownWaitTimeSeconds = 30;
 
     /**
+     * 是否启用 Epoll I/O 模型, Linux 环境下建议开启
+     * <p>
      * make install
      *
      *
