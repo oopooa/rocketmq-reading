@@ -132,6 +132,10 @@ public class BrokerConfig extends BrokerIdentity {
     private boolean transferMsgByHeap = true;
 
     private String regionId = MixAll.DEFAULT_TRACE_REGION_ID;
+
+    /**
+     * Broker 向 NameServer 注册的超时时间, 默认 24 秒
+     */
     private int registerBrokerTimeoutMills = 24000;
 
     private int sendHeartbeatTimeoutMillis = 1000;

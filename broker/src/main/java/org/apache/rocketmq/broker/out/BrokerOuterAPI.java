@@ -480,13 +480,19 @@ public class BrokerOuterAPI {
         final BrokerIdentity brokerIdentity) {
 
         final List<RegisterBrokerResult> registerBrokerResultList = new CopyOnWriteArrayList<>();
+        // 获取所有可用的 NameServer 地址
         List<String> nameServerAddressList = this.remotingClient.getAvailableNameSrvList();
+        // 如果 NameServer 地址列表不为空
         if (nameServerAddressList != null && nameServerAddressList.size() > 0) {
-
+            // 创建请求头
             final RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
+            // 设置 broker 地址
             requestHeader.setBrokerAddr(brokerAddr);
+            // 设置 brokerId, 等于 0 表示主节点, 大于 0 表示从节点
             requestHeader.setBrokerId(brokerId);
+            // 设置 broker 名称
             requestHeader.setBrokerName(brokerName);
+            // 设置集群名称
             requestHeader.setClusterName(clusterName);
             requestHeader.setHaServerAddr(haServerAddr);
             requestHeader.setEnableActingMaster(enableActingMaster);
@@ -507,6 +513,7 @@ public class BrokerOuterAPI {
                     @Override
                     public void run0() {
                         try {
+                            // 向 NameServer 注册
                             RegisterBrokerResult result = registerBroker(namesrvAddr, oneway, timeoutMills, requestHeader, body);
                             if (result != null) {
                                 registerBrokerResultList.add(result);
@@ -516,6 +523,7 @@ public class BrokerOuterAPI {
                         } catch (Exception e) {
                             LOGGER.error("Failed to register current broker to name server. TargetHost={}", namesrvAddr, e);
                         } finally {
+                            // 注册完成, 计数器减 1
                             countDownLatch.countDown();
                         }
                     }
@@ -523,6 +531,11 @@ public class BrokerOuterAPI {
             }
 
             try {
+                /**
+                 * 如果在指定的超时时间内计数器没有变成 0, 即 broker 没有全部注册完成
+                 * <p>
+                 * 默认是 24 秒
+                 */
                 if (!countDownLatch.await(timeoutMills, TimeUnit.MILLISECONDS)) {
                     LOGGER.warn("Registration to one or more name servers does NOT complete within deadline. Timeout threshold: {}ms", timeoutMills);
                 }
