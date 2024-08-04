@@ -33,10 +33,12 @@ public class BrokerData implements Comparable<BrokerData> {
     private String brokerName;
 
     /**
+     * brokerId = 0 表示 Master, 大于 0 表示 Slave
+     * <p>
      * The container that store the all single instances for the current broker replication cluster.
      * The key is the brokerId, and the value is the address of the single broker instance.
      */
-    private HashMap<Long, String> brokerAddrs;
+    private HashMap<Long/* brokerId */, String/* broker address */> brokerAddrs;
     private String zoneName;
     private final Random random = new Random();
 

@@ -73,9 +73,21 @@ public class RouteInfoManager {
     /**
      * topic 消息队列的路由信息, 消息发送时根据路由表进行负载均衡
      */
-    private final Map<String/* topic */, Map<String, QueueData>> topicQueueTable;
+    private final Map<String/* topic */, Map<String/* brokerName */, QueueData>> topicQueueTable;
+
+    /**
+     * Broker 基础信息, 包含 broker 名称, 所属集群名称, 主备地址
+     */
     private final Map<String/* brokerName */, BrokerData> brokerAddrTable;
+
+    /**
+     * Broker 集群信息, 存储所有的 Broker 名称
+     */
     private final Map<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
+
+    /**
+     * Broker 状态信息, NameServer 每次收到心跳时会替换该信息
+     */
     private final Map<BrokerAddrInfo/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
     private final Map<BrokerAddrInfo/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
     private final Map<String/* topic */, Map<String/*brokerName*/, TopicQueueMappingInfo>> topicQueueMappingInfoTable;
@@ -1182,6 +1194,10 @@ class BrokerAddrInfo {
 }
 
 class BrokerLiveInfo {
+
+    /**
+     * 上次收到 Broker 心跳的时间
+     */
     private long lastUpdateTimestamp;
     private long heartbeatTimeoutMillis;
     private DataVersion dataVersion;
