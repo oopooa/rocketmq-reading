@@ -253,30 +253,42 @@ public class RouteInfoManager {
         final Channel channel) {
         RegisterBrokerResult result = new RegisterBrokerResult();
         try {
+            // Broker 注册获取写锁, 防止并发修改
             this.lock.writeLock().lockInterruptibly();
 
-            //init or update the cluster info
+            // 判断 Broker 集群是否存在, 如果不存在, 则创建集群
             Set<String> brokerNames = ConcurrentHashMapUtils.computeIfAbsent((ConcurrentHashMap<String, Set<String>>) this.clusterAddrTable, clusterName, k -> new HashSet<>());
+            // 将 Broker 名称加入到集群中
             brokerNames.add(brokerName);
 
+            // 默认不是首次注册
             boolean registerFirst = false;
-
+            // 根据 Broker 名称获取 Broker 信息
             BrokerData brokerData = this.brokerAddrTable.get(brokerName);
+            // 如果 Broker 信息为空
             if (null == brokerData) {
+                // 说明是首次注册
                 registerFirst = true;
+                // 创建 Broker 信息
                 brokerData = new BrokerData(clusterName, brokerName, new HashMap<>());
+                // 添加到 Broker 集群
                 this.brokerAddrTable.put(brokerName, brokerData);
             }
 
+            // 如果启用代理 Master 机制属性为空, 则说明是老版本的 Broker
             boolean isOldVersionBroker = enableActingMaster == null;
             brokerData.setEnableActingMaster(!isOldVersionBroker && enableActingMaster);
             brokerData.setZoneName(zoneName);
 
+            // 获取当前 Broker 主备地址
             Map<Long, String> brokerAddrsMap = brokerData.getBrokerAddrs();
 
+            // 最小的 BrokerId 是否更新过
             boolean isMinBrokerIdChanged = false;
             long prevMinBrokerId = 0;
+            // 如果主备地址不为空
             if (!brokerAddrsMap.isEmpty()) {
+                // 获取主备地址中 BrokerId 最小的数据
                 prevMinBrokerId = Collections.min(brokerAddrsMap.keySet());
             }
 
