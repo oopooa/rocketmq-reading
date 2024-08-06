@@ -292,28 +292,38 @@ public class RouteInfoManager {
                 prevMinBrokerId = Collections.min(brokerAddrsMap.keySet());
             }
 
+            // 如果当前注册的 BrokerId 比之前主备地址中最小的 BrokerId 都小 (比如 Master 服务恢复)
             if (brokerId < prevMinBrokerId) {
+                // 最小 BrokerId 已更新
                 isMinBrokerIdChanged = true;
             }
 
             //Switch slave to master: first remove <1, IP:PORT> in namesrv, then add <0, IP:PORT>
-            //The same IP:PORT must only have one record in brokerAddrTable
+            // 删除主备地址缓存中 ip:port 完全相同并且 BrokerId 不同的数据, 相同 ip:port 的记录只能有一条
             brokerAddrsMap.entrySet().removeIf(item -> null != brokerAddr && brokerAddr.equals(item.getValue()) && brokerId != item.getKey());
 
-            //If Local brokerId stateVersion bigger than the registering one,
+            // 用 BrokerId 获取旧的 Broker 地址
             String oldBrokerAddr = brokerAddrsMap.get(brokerId);
+            // 如果旧的 Broker 地址不为空并且和正在注册的 Broker 地址不一样, 需要处理冲突。因为 1 个 BrokerId 对应了 2 个 Broker 地址
             if (null != oldBrokerAddr && !oldBrokerAddr.equals(brokerAddr)) {
+                // 获取旧的 Broker 信息
                 BrokerLiveInfo oldBrokerInfo = brokerLiveTable.get(new BrokerAddrInfo(clusterName, oldBrokerAddr));
 
+                // 如果旧的 Broker 信息存在
                 if (null != oldBrokerInfo) {
+                    // 获取旧的数据版本号
                     long oldStateVersion = oldBrokerInfo.getDataVersion().getStateVersion();
+                    // 获取新的数据版本号
                     long newStateVersion = topicConfigWrapper.getDataVersion().getStateVersion();
+                    // 如果旧的数据版本号大于新的数据版本号, 说明当前注册的 Broker 信息是过期的
                     if (oldStateVersion > newStateVersion) {
+                        // 记录冲突日志
                         log.warn("Registered Broker conflicts with the existed one, just ignore.: Cluster:{}, BrokerName:{}, BrokerId:{}, " +
                                 "Old BrokerAddr:{}, Old Version:{}, New BrokerAddr:{}, New Version:{}.",
                             clusterName, brokerName, brokerId, oldBrokerAddr, oldStateVersion, brokerAddr, newStateVersion);
-                        //Remove the rejected brokerAddr from brokerLiveTable.
+                        // 删除被拒绝的 Broker 地址信息
                         brokerLiveTable.remove(new BrokerAddrInfo(clusterName, brokerAddr));
+                        // 返回结果, 处理结束
                         return result;
                     }
                 }
