@@ -335,16 +335,22 @@ public class RouteInfoManager {
                 return null;
             }
 
+            // 更新当前 BrokerId 对应的 Broker 地址, 返回旧的 Broker 地址
             String oldAddr = brokerAddrsMap.put(brokerId, brokerAddr);
+            // 如果旧地址为空, 则表明是首次注册
             registerFirst = registerFirst || (StringUtils.isEmpty(oldAddr));
 
+            // 如果 BrokerId 是 0, 那么当前注册的 Broker 是 Master
             boolean isMaster = MixAll.MASTER_ID == brokerId;
 
+            // 是否为主要的 Slave 节点 (条件: 不是老版本 Broker && 不是 Master && brokerId 是最小的)
             boolean isPrimeSlave = !isOldVersionBroker && !isMaster
                 && brokerId == Collections.min(brokerAddrsMap.keySet());
 
+            // Broker 的 Topic 配置不为空并且 (Broker 是 Master 或主要的 Slave)
             if (null != topicConfigWrapper && (isMaster || isPrimeSlave)) {
 
+                // 获取 Topic 配置表
                 ConcurrentMap<String, TopicConfig> tcTable =
                     topicConfigWrapper.getTopicConfigTable();
 
@@ -374,15 +380,17 @@ public class RouteInfoManager {
                     }
 
                     for (Map.Entry<String, TopicConfig> entry : tcTable.entrySet()) {
+                        // 如果是首次注册或者 Topic 配置发生变化
                         if (registerFirst || this.isTopicConfigChanged(clusterName, brokerAddr,
                             topicConfigWrapper.getDataVersion(), brokerName,
                             entry.getValue().getTopicName())) {
                             final TopicConfig topicConfig = entry.getValue();
-                            // In Slave Acting Master mode, Namesrv will regard the surviving Slave with the smallest brokerId as the "agent" Master, and modify the brokerPermission to read-only.
+                            // 在 Slave 代理 Master 模式下, NameServer 会把现存的 Slave 中 BrokerId 最小的 Broker 视为 "代理" Master, 并修改该 Broker 的权限为只读
                             if (isPrimeSlave && brokerData.isEnableActingMaster()) {
-                                // Wipe write perm for prime slave
+                                // 清除 Topic 的写权限
                                 topicConfig.setPerm(topicConfig.getPerm() & (~PermName.PERM_WRITE));
                             }
+                            // 创建或更新 Topic 路由信息
                             this.createAndUpdateQueueData(brokerName, topicConfig);
                         }
                     }
@@ -513,6 +521,7 @@ public class RouteInfoManager {
     }
 
     private void createAndUpdateQueueData(final String brokerName, final TopicConfig topicConfig) {
+        // 创建队列信息实例
         QueueData queueData = new QueueData();
         queueData.setBrokerName(brokerName);
         queueData.setWriteQueueNums(topicConfig.getWriteQueueNums());
