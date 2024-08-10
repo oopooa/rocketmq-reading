@@ -484,13 +484,17 @@ public class RouteInfoManager {
 
     public boolean isBrokerTopicConfigChanged(final String clusterName, final String brokerAddr,
         final DataVersion dataVersion) {
+        // 获取 Broker 上次心跳的数据版本信息
         DataVersion prev = queryBrokerTopicConfig(clusterName, brokerAddr);
+        // 上次心跳数据为空或者数据版本不同, 则表示 Topic 配置更新过
         return null == prev || !prev.equals(dataVersion);
     }
 
     public boolean isTopicConfigChanged(final String clusterName, final String brokerAddr,
         final DataVersion dataVersion, String brokerName, String topic) {
+        // 查询 Broker 的 Topic 配置是否更新过
         boolean isChange = isBrokerTopicConfigChanged(clusterName, brokerAddr, dataVersion);
+        // 如果更新过, 直接返回
         if (isChange) {
             return true;
         }
@@ -504,9 +508,13 @@ public class RouteInfoManager {
     }
 
     public DataVersion queryBrokerTopicConfig(final String clusterName, final String brokerAddr) {
+        // 创建一个 Broker 地址实例
         BrokerAddrInfo addrInfo = new BrokerAddrInfo(clusterName, brokerAddr);
+        // 在 Broker 的状态信息表中查询上一次活动记录
         BrokerLiveInfo prev = this.brokerLiveTable.get(addrInfo);
+        // 如果之前的活动记录不为空
         if (prev != null) {
+            // 返回上次的数据版本
             return prev.getDataVersion();
         }
         return null;
