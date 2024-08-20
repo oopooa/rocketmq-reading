@@ -395,8 +395,9 @@ public class RouteInfoManager {
                         }
                     }
 
+                    // Broker 的 Topic 配置是否更新过或当前 Broker 为首次注册
                     if (this.isBrokerTopicConfigChanged(clusterName, brokerAddr, topicConfigWrapper.getDataVersion()) || registerFirst) {
-                        //the topicQueueMappingInfoMap should never be null, but can be empty
+                        // topicQueueMappingInfoMap 应该永远不会为 null, 但可以为 empty
                         for (Map.Entry<String, TopicQueueMappingInfo> entry : topicQueueMappingInfoMap.entrySet()) {
                             if (!topicQueueMappingInfoTable.containsKey(entry.getKey())) {
                                 topicQueueMappingInfoTable.put(entry.getKey(), new HashMap<>());
@@ -409,7 +410,9 @@ public class RouteInfoManager {
                 }
             }
 
+            // 创建 Broker 地址信息
             BrokerAddrInfo brokerAddrInfo = new BrokerAddrInfo(clusterName, brokerAddr);
+            // 更新 Broker 心跳信息, 返回上一次心跳信息
             BrokerLiveInfo prevBrokerLiveInfo = this.brokerLiveTable.put(brokerAddrInfo,
                 new BrokerLiveInfo(
                     System.currentTimeMillis(),
@@ -417,7 +420,9 @@ public class RouteInfoManager {
                     topicConfigWrapper == null ? new DataVersion() : topicConfigWrapper.getDataVersion(),
                     channel,
                     haServerAddr));
+            // 如果上一次心跳信息为空
             if (null == prevBrokerLiveInfo) {
+                // 输出 Broker 注册日志
                 log.info("new broker registered, {} HAService: {}", brokerAddrInfo, haServerAddr);
             }
 
@@ -429,6 +434,7 @@ public class RouteInfoManager {
                 }
             }
 
+            // 如果当前注册 Broker 不是 Master
             if (MixAll.MASTER_ID != brokerId) {
                 String masterAddr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
                 if (masterAddr != null) {
@@ -441,13 +447,16 @@ public class RouteInfoManager {
                 }
             }
 
+            // 最小的 BrokerId 更新过并且配置了需要通知其变化
             if (isMinBrokerIdChanged && namesrvConfig.isNotifyMinBrokerIdChanged()) {
+                // 通知集群其他 Broker 最小的 BrokerId 发生了变化
                 notifyMinBrokerIdChanged(brokerAddrsMap, null,
                     this.brokerLiveTable.get(brokerAddrInfo).getHaServerAddr());
             }
         } catch (Exception e) {
             log.error("registerBroker Exception", e);
         } finally {
+            // Broker 注册释放写锁
             this.lock.writeLock().unlock();
         }
 
@@ -498,12 +507,15 @@ public class RouteInfoManager {
         if (isChange) {
             return true;
         }
+        // 获取对应 Topic 队列信息
         final Map<String, QueueData> queueDataMap = this.topicQueueTable.get(topic);
+        // 如果队列信息为空
         if (queueDataMap == null || queueDataMap.isEmpty()) {
+            // 直接返回 true, 说明队列信息有更新
             return true;
         }
 
-        // The topicQueueTable already contains the broker
+        // Topic 队列表是否已经包含了当前 broker 名称, 如果包含, 说明没有更新, 反之则更新
         return !queueDataMap.containsKey(brokerName);
     }
 
