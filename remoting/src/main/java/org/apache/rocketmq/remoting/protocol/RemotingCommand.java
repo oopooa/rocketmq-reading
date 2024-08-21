@@ -131,6 +131,7 @@ public class RemotingCommand {
     }
 
     public static RemotingCommand createResponseCommand(Class<? extends CommandCustomHeader> classHeader) {
+        // 创建远程响应实例, 设置默认响应 code 和备注信息
         return createResponseCommand(RemotingSysResponseCode.SYSTEM_ERROR, "not set any response code", classHeader);
     }
 
@@ -148,14 +149,20 @@ public class RemotingCommand {
 
     public static RemotingCommand createResponseCommand(int code, String remark,
         Class<? extends CommandCustomHeader> classHeader) {
+        // 创建远程命令实例
         RemotingCommand cmd = new RemotingCommand();
         cmd.markResponseType();
+        // 设置响应 code
         cmd.setCode(code);
+        // 设置备注
         cmd.setRemark(remark);
+        // 设置命令版本信息
         setCmdVersion(cmd);
 
+        // 如果命令自定义 header 不为空
         if (classHeader != null) {
             try {
+                // 使用反射创建自定义 header 的实例
                 CommandCustomHeader objectHeader = classHeader.getDeclaredConstructor().newInstance();
                 cmd.customHeader = objectHeader;
             } catch (InstantiationException e) {

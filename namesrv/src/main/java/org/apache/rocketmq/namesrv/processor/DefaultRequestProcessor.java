@@ -111,6 +111,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             case RequestCode.QUERY_DATA_VERSION:
                 return this.queryBrokerTopicConfig(ctx, request);
             case RequestCode.REGISTER_BROKER:
+                // 处理 Broker 注册的请求 (103)
                 return this.registerBroker(ctx, request);
             case RequestCode.UNREGISTER_BROKER:
                 return this.unregisterBroker(ctx, request);
@@ -222,13 +223,19 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
 
     public RemotingCommand registerBroker(ChannelHandlerContext ctx,
         RemotingCommand request) throws RemotingCommandException {
+        // 创建附带自定义 header 的远程响应实例
         final RemotingCommand response = RemotingCommand.createResponseCommand(RegisterBrokerResponseHeader.class);
+        // 读取响应 header
         final RegisterBrokerResponseHeader responseHeader = (RegisterBrokerResponseHeader) response.readCustomHeader();
+        // 解码请求 header 内容
         final RegisterBrokerRequestHeader requestHeader =
             (RegisterBrokerRequestHeader) request.decodeCommandCustomHeader(RegisterBrokerRequestHeader.class);
 
+        // 校验请求内容的完整性
         if (!checksum(ctx, request, requestHeader)) {
+            // 设置系统异常响应码
             response.setCode(ResponseCode.SYSTEM_ERROR);
+            // 设置校验不匹配消息
             response.setRemark("crc32 not match");
             return response;
         }
@@ -236,6 +243,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         TopicConfigSerializeWrapper topicConfigWrapper = null;
         List<String> filterServerList = null;
 
+        // 从请求中获取 Broker 的版本信息
         Version brokerVersion = MQVersion.value2Version(request.getVersion());
         if (brokerVersion.ordinal() >= MQVersion.Version.V3_0_11.ordinal()) {
             final RegisterBrokerBody registerBrokerBody = extractRegisterBrokerBodyFromRequest(request, requestHeader);
@@ -330,14 +338,20 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
 
     private boolean checksum(ChannelHandlerContext ctx, RemotingCommand request,
         RegisterBrokerRequestHeader requestHeader) {
+        // 如果请求 header 里的 crc32 校验值不为 0
         if (requestHeader.getBodyCrc32() != 0) {
+            // 对请求的消息体进行 crc32 校验
             final int crc32 = UtilAll.crc32(request.getBody());
+            // 如果算出来的值和请求 header 中的 crc32 校验值不一致
             if (crc32 != requestHeader.getBodyCrc32()) {
+                // 记录异常日志
                 log.warn(String.format("receive registerBroker request,crc32 not match,from %s",
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel())));
+                // 校验不通过
                 return false;
             }
         }
+        // 校验通过
         return true;
     }
 
