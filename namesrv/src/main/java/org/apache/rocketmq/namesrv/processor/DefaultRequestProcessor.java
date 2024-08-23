@@ -246,14 +246,17 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
         // 从请求中获取 Broker 的版本信息
         Version brokerVersion = MQVersion.value2Version(request.getVersion());
         if (brokerVersion.ordinal() >= MQVersion.Version.V3_0_11.ordinal()) {
+            // 从请求中读取 Broker 注册数据
             final RegisterBrokerBody registerBrokerBody = extractRegisterBrokerBodyFromRequest(request, requestHeader);
+            // 设置 Topic 配置表
             topicConfigWrapper = registerBrokerBody.getTopicConfigSerializeWrapper();
             filterServerList = registerBrokerBody.getFilterServerList();
         } else {
-            // RegisterBrokerBody of old version only contains TopicConfig.
+            // 远古版本的 RegisterBrokerBody 只有 Topic 配置数据
             topicConfigWrapper = extractRegisterTopicConfigFromRequest(request);
         }
 
+        // 注册 Broker
         RegisterBrokerResult result = this.namesrvController.getRouteInfoManager().registerBroker(
             requestHeader.getClusterName(),
             requestHeader.getBrokerAddr(),
@@ -275,9 +278,12 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             return response;
         }
 
+        // 设置高可用服务地址
         responseHeader.setHaServerAddr(result.getHaServerAddr());
+        // 设置 Master 实例地址
         responseHeader.setMasterAddr(result.getMasterAddr());
 
+        // 如果需要返回顺序 Topic 配置
         if (this.namesrvController.getNamesrvConfig().isReturnOrderTopicConfigToBroker()) {
             byte[] jsonValue = this.namesrvController.getKvConfigManager().getKVListByNamespace(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG);
             response.setBody(jsonValue);
@@ -303,11 +309,15 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
 
     private RegisterBrokerBody extractRegisterBrokerBodyFromRequest(RemotingCommand request,
         RegisterBrokerRequestHeader requestHeader) throws RemotingCommandException {
+        // 创建注册 Broker 的消息体实例
         RegisterBrokerBody registerBrokerBody = new RegisterBrokerBody();
 
+        // 如果请求中的消息体不为空
         if (request.getBody() != null) {
             try {
+                // 获取 Broker 的版本信息
                 Version brokerVersion = MQVersion.value2Version(request.getVersion());
+                // 反序列化请求中的 Broker 注册消息体数据
                 registerBrokerBody = RegisterBrokerBody.decode(request.getBody(), requestHeader.isCompressed(), brokerVersion);
             } catch (Exception e) {
                 throw new RemotingCommandException("Failed to decode RegisterBrokerBody", e);

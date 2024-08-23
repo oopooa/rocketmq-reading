@@ -113,7 +113,9 @@ public class RegisterBrokerBody extends RemotingSerializable {
     }
 
     public static RegisterBrokerBody decode(byte[] data, boolean compressed, MQVersion.Version brokerVersion) throws IOException {
+        // 如果不是压缩后的数据
         if (!compressed) {
+            // 通过 Json 反序列化
             return RegisterBrokerBody.decode(data, RegisterBrokerBody.class);
         }
         long start = System.currentTimeMillis();
