@@ -21,6 +21,7 @@ bazel-testlogs
 # run config
 .idea/*
 !.idea/runConfigurations/
+!.idea/vcs.xml
 
 # local working
 /home/logs
