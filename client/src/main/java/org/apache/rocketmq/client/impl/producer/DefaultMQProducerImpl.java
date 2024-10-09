@@ -473,7 +473,9 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     }
 
     private void makeSureStateOK() throws MQClientException {
+        // 如果服务状态不是运行中
         if (this.serviceState != ServiceState.RUNNING) {
+            // 抛出客户端异常, 输出服务状态
             throw new MQClientException("The producer service state not OK, "
                 + this.serviceState
                 + FAQUrl.suggestTodo(FAQUrl.CLIENT_SERVICE_NOT_OK),
@@ -700,11 +702,15 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         final SendCallback sendCallback,
         final long timeout
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        // 确保生产者状态正常
         this.makeSureStateOK();
         Validators.checkMessage(msg, this.defaultMQProducer);
         final long invokeID = random.nextLong();
+        // 获取首次开始时间戳
         long beginTimestampFirst = System.currentTimeMillis();
+        // 赋值给上次开始时间戳
         long beginTimestampPrev = beginTimestampFirst;
+        // 结束时间戳默认为首次开始时间戳
         long endTimestamp = beginTimestampFirst;
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
@@ -845,9 +851,13 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     }
 
     private TopicPublishInfo tryToFindTopicPublishInfo(final String topic) {
+        // 从 Topic 发布信息表中获取 Topic 的发布信息
         TopicPublishInfo topicPublishInfo = this.topicPublishInfoTable.get(topic);
+        // 如果 Topic 的发布信息为空或者发布信息不正常
         if (null == topicPublishInfo || !topicPublishInfo.ok()) {
+            // 在发布信息表中存入该 Topic 的空数据
             this.topicPublishInfoTable.putIfAbsent(topic, new TopicPublishInfo());
+            // 从 NameServer 中获取 Topic 的路由信息并进行更新
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
         }
@@ -1524,6 +1534,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     public SendResult send(Message msg,
         long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        // 消息发送默认实现, 采用同步发送
         return this.sendDefaultImpl(msg, CommunicationMode.SYNC, null, timeout);
     }
 

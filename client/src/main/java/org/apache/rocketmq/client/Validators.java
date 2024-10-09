@@ -60,22 +60,27 @@ public class Validators {
     }
 
     public static void checkMessage(Message msg, DefaultMQProducer defaultMQProducer) throws MQClientException {
+        // 如果发送的消息为空
         if (null == msg) {
+            // 抛出非法消息异常
             throw new MQClientException(ResponseCode.MESSAGE_ILLEGAL, "the message is null");
         }
-        // topic
+        // 检查 Topic 名称的规范性
         Validators.checkTopic(msg.getTopic());
+        // 检查 Topic 是否允许发送消息
         Validators.isNotAllowedSendTopic(msg.getTopic());
 
-        // body
+        // 消息体不能为空
         if (null == msg.getBody()) {
             throw new MQClientException(ResponseCode.MESSAGE_ILLEGAL, "the message body is null");
         }
 
+        // 消息体长度不能为 0
         if (0 == msg.getBody().length) {
             throw new MQClientException(ResponseCode.MESSAGE_ILLEGAL, "the message body length is zero");
         }
 
+        // 消息体长度不能超过最大限制 (默认 4 M)
         if (msg.getBody().length > defaultMQProducer.getMaxMessageSize()) {
             throw new MQClientException(ResponseCode.MESSAGE_ILLEGAL,
                 "the message body size over max value, MAX: " + defaultMQProducer.getMaxMessageSize());
@@ -89,15 +94,18 @@ public class Validators {
     }
 
     public static void checkTopic(String topic) throws MQClientException {
+        // Topic 名称不能为空
         if (UtilAll.isBlank(topic)) {
             throw new MQClientException("The specified topic is blank", null);
         }
 
+        // Topic 的长度不能超过 127 个字符
         if (topic.length() > TOPIC_MAX_LENGTH) {
             throw new MQClientException(
                 String.format("The specified topic is longer than topic max length %d.", TOPIC_MAX_LENGTH), null);
         }
 
+        // 校验 Topic 名称是否包含非法字符 (除大小写字母、数字、%、|、_、-以外的所有字符)
         if (isTopicOrGroupIllegal(topic)) {
             throw new MQClientException(String.format(
                     "The specified topic[%s] contains illegal characters, allowing only %s", topic,
@@ -113,6 +121,7 @@ public class Validators {
     }
 
     public static void isNotAllowedSendTopic(String topic) throws MQClientException {
+        // 如果该 Topic 不允许发送消息
         if (TopicValidator.isNotAllowedSendTopic(topic)) {
             throw new MQClientException(
                     String.format("Sending message to topic[%s] is forbidden.", topic), null);

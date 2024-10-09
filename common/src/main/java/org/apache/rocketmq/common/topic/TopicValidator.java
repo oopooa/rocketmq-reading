@@ -145,6 +145,7 @@ public class TopicValidator {
     }
 
     public static boolean isNotAllowedSendTopic(String topic) {
+        // 是否属于不能发送消息的 Topic 集合
         return NOT_ALLOWED_SEND_TOPIC_SET.contains(topic);
     }
 

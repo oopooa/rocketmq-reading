@@ -118,14 +118,21 @@ public class TopicRouteData extends RemotingSerializable {
     }
 
     public boolean topicRouteDataChanged(TopicRouteData oldData) {
+        // 旧的路由信息为空
         if (oldData == null)
+            // 直接返回已变更
             return true;
+        // 创建旧的数据实例
         TopicRouteData old = new TopicRouteData(oldData);
+        // 创建新的数据实例
         TopicRouteData now = new TopicRouteData(this);
+        // 旧数据列表排序
         Collections.sort(old.getQueueDatas());
         Collections.sort(old.getBrokerDatas());
+        // 新数据列表排序
         Collections.sort(now.getQueueDatas());
         Collections.sort(now.getBrokerDatas());
+        // 判断两个对象是否不同
         return !old.equals(now);
     }
 

@@ -570,6 +570,7 @@ public class MQClientInstance {
     }
 
     public boolean updateTopicRouteInfoFromNameServer(final String topic) {
+        // 从 NameServer 中获取 Topic 的路由信息并进行更新
         return updateTopicRouteInfoFromNameServer(topic, false, null);
     }
 
@@ -765,6 +766,7 @@ public class MQClientInstance {
     public boolean updateTopicRouteInfoFromNameServer(final String topic, boolean isDefault,
         DefaultMQProducer defaultMQProducer) {
         try {
+            // 尝试获取 NameServer 的锁, 超时时间 3 秒
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     TopicRouteData topicRouteData;
@@ -778,10 +780,13 @@ public class MQClientInstance {
                             }
                         }
                     } else {
+                        // 从 NameServer 中获取 Topic 路由信息
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, clientConfig.getMqClientApiTimeout());
                     }
                     if (topicRouteData != null) {
+                        // 根据 Topic 获取旧的路由数据
                         TopicRouteData old = this.topicRouteTable.get(topic);
+                        // 检查路由信息是否变更
                         boolean changed = topicRouteData.topicRouteDataChanged(old);
                         if (!changed) {
                             changed = this.isNeedUpdateTopicRouteInfo(topic);

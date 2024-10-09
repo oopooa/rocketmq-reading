@@ -1979,28 +1979,38 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
 
     public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis)
         throws RemotingException, MQClientException, InterruptedException {
+        // 从 NameServer 中获取 Topic 路由信息
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, true);
     }
 
     public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis,
         boolean allowTopicNotExist) throws MQClientException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
+        // 创建获取路由信息的请求头
         GetRouteInfoRequestHeader requestHeader = new GetRouteInfoRequestHeader();
+        // 给请求头设置 Topic
         requestHeader.setTopic(topic);
+        // 创建请求命令
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ROUTEINFO_BY_TOPIC, requestHeader);
 
+        // 通过远程客户端进行同步调用
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
+            // 响应码为 Topic 不存在
             case ResponseCode.TOPIC_NOT_EXIST: {
+                // 如果允许 Topic 不存在
                 if (allowTopicNotExist) {
                     log.warn("get Topic [{}] RouteInfoFromNameServer is not exist value", topic);
                 }
 
                 break;
             }
+            // 响应码为成功
             case ResponseCode.SUCCESS: {
+                // 从响应中获取数据体
                 byte[] body = response.getBody();
                 if (body != null) {
+                    // 解码为路由信息数据
                     return TopicRouteData.decode(body, TopicRouteData.class);
                 }
             }
