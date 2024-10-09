@@ -373,6 +373,7 @@ public class MQClientAPIImpl implements NameServerUpdateCallback {
         RemotingCommand response = this.remotingClient.invokeSync(MixAll.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr),
             request, timeoutMillis);
         assert response != null;
+        // Todo extract code block
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
                 return;
