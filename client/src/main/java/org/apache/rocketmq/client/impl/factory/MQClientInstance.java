@@ -794,9 +794,11 @@ public class MQClientInstance {
                             log.info("the topic[{}] route info changed, old[{}] ,new[{}]", topic, old, topicRouteData);
                         }
 
+                        // 如果路由信息有变更
                         if (changed) {
 
                             for (BrokerData bd : topicRouteData.getBrokerDatas()) {
+                                // 保存 Broker 名称和对应地址集合到表中
                                 this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
                             }
 
