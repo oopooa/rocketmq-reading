@@ -810,8 +810,9 @@ public class MQClientInstance {
                                 }
                             }
 
-                            // Update Pub info
+                            // 更新 Topic 发布信息
                             {
+                                // 把 Topic 路由信息转换为 Topic 发布信息
                                 TopicPublishInfo publishInfo = topicRouteData2TopicPublishInfo(topic, topicRouteData);
                                 publishInfo.setHaveTopicRouterInfo(true);
                                 for (Entry<String, MQProducerInner> entry : this.producerTable.entrySet()) {
@@ -832,8 +833,10 @@ public class MQClientInstance {
                                     }
                                 }
                             }
+                            // 拷贝一个 Topic 路由信息
                             TopicRouteData cloneTopicRouteData = new TopicRouteData(topicRouteData);
                             log.info("topicRouteTable.put. Topic = {}, TopicRouteData[{}]", topic, cloneTopicRouteData);
+                            // 保存到 Topic 路由表
                             this.topicRouteTable.put(topic, cloneTopicRouteData);
                             return true;
                         }
@@ -848,6 +851,7 @@ public class MQClientInstance {
                     log.error("updateTopicRouteInfoFromNameServer Exception", e);
                     throw new IllegalStateException(e);
                 } finally {
+                    // 释放 NameServer 锁
                     this.lockNamesrv.unlock();
                 }
             } else {

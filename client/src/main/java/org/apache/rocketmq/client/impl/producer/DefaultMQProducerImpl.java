@@ -448,6 +448,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     @Override
     public void updateTopicPublishInfo(final String topic, final TopicPublishInfo info) {
         if (info != null && topic != null) {
+            // 把 Topic 和对应发布信息保存到表中
             TopicPublishInfo prev = this.topicPublishInfoTable.put(topic, info);
             if (prev != null) {
                 log.info("updateTopicPublishInfo prev is not null, " + prev);
@@ -712,21 +713,30 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         long beginTimestampPrev = beginTimestampFirst;
         // 结束时间戳默认为首次开始时间戳
         long endTimestamp = beginTimestampFirst;
+        // 尝试获取 Topic 的发布信息
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
+        // 如果 Topic 的消息队列不为空
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
             boolean callTimeout = false;
             MessageQueue mq = null;
             Exception exception = null;
             SendResult sendResult = null;
+            // 最多发送次数, 如果是同步模式, 默认失败时重发 2 次 (总共 3 次), 其他模式则只发送 1 次
             int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer.getRetryTimesWhenSendFailed() : 1;
+            // 当前发送次数
             int times = 0;
+            // 已发送的 Broker 数组
             String[] brokersSent = new String[timesTotal];
             boolean resetIndex = false;
             for (; times < timesTotal; times++) {
+                // 上次发送的 Broker 名称, 首次发送时为空
                 String lastBrokerName = null == mq ? null : mq.getBrokerName();
+                // 如果是重发的消息
                 if (times > 0) {
+                    // 需要重置索引
                     resetIndex = true;
                 }
+                // 选择 Topic 中的一个消息队列
                 MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName, resetIndex);
                 if (mqSelected != null) {
                     mq = mqSelected;
@@ -743,6 +753,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             break;
                         }
 
+                        // 消息发送核心实现
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
@@ -859,6 +870,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             this.topicPublishInfoTable.putIfAbsent(topic, new TopicPublishInfo());
             // 从 NameServer 中获取 Topic 的路由信息并进行更新
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
+            // 获取最新的 Topic 发布信息
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
         }
 
