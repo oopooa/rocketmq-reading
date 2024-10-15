@@ -707,11 +707,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.makeSureStateOK();
         Validators.checkMessage(msg, this.defaultMQProducer);
         final long invokeID = random.nextLong();
-        // 获取首次开始时间戳
+        // 获取最开始的时间戳
         long beginTimestampFirst = System.currentTimeMillis();
-        // 赋值给上次开始时间戳
+        // 默认赋值给消息发送前的时间戳
         long beginTimestampPrev = beginTimestampFirst;
-        // 结束时间戳默认为首次开始时间戳
+        // 结束时间戳默认为最开始的时间戳
         long endTimestamp = beginTimestampFirst;
         // 尝试获取 Topic 的发布信息
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
@@ -742,19 +742,24 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     mq = mqSelected;
                     brokersSent[times] = mq.getBrokerName();
                     try {
+                        // 消息发送前的时间戳
                         beginTimestampPrev = System.currentTimeMillis();
                         if (times > 0) {
                             //Reset topic with namespace during resend.
                             msg.setTopic(this.defaultMQProducer.withNamespace(msg.getTopic()));
                         }
+                        // 计算从最开始到消息发送前的耗时
                         long costTime = beginTimestampPrev - beginTimestampFirst;
+                        // 如果发送前的耗时已经超过了超时时间
                         if (timeout < costTime) {
+                            // 表明已经超时
                             callTimeout = true;
                             break;
                         }
 
                         // 消息发送核心实现
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
+                        // 发送完成时间戳
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
                         switch (communicationMode) {
