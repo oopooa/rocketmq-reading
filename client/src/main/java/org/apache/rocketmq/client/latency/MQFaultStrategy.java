@@ -24,6 +24,10 @@ import org.apache.rocketmq.common.message.MessageQueue;
 
 public class MQFaultStrategy {
     private LatencyFaultTolerance<String> latencyFaultTolerance;
+
+    /**
+     * 是否启用发送延迟故障机制 (默认为否)
+     */
     private volatile boolean sendLatencyFaultEnable;
     private volatile boolean startDetectorEnable;
     private long[] latencyMax = {50L, 100L, 550L, 1800L, 3000L, 5000L, 15000L};
@@ -163,7 +167,9 @@ public class MQFaultStrategy {
 
     public void updateFaultItem(final String brokerName, final long currentLatency, boolean isolation,
                                 final boolean reachable) {
+        // 如果启用了发送延迟故障机制
         if (this.sendLatencyFaultEnable) {
+            // 计算不可用的持续时间
             long duration = computeNotAvailableDuration(isolation ? 10000 : currentLatency);
             this.latencyFaultTolerance.updateFaultItem(brokerName, currentLatency, duration, reachable);
         }
@@ -171,6 +177,7 @@ public class MQFaultStrategy {
 
     private long computeNotAvailableDuration(final long currentLatency) {
         for (int i = latencyMax.length - 1; i >= 0; i--) {
+            // 如果当前延迟时间大于等于某个阈值
             if (currentLatency >= latencyMax[i]) {
                 return this.notAvailableDuration[i];
             }
