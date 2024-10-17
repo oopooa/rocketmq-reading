@@ -761,6 +761,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo, timeout - costTime);
                         // 发送完成时间戳
                         endTimestamp = System.currentTimeMillis();
+                        // 更新 Broker 的容错信息
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false, true);
                         switch (communicationMode) {
                             case ASYNC:
@@ -768,12 +769,16 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             case ONEWAY:
                                 return null;
                             case SYNC:
+                                // 如果发送的状态不是 OK
                                 if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
+                                    // 如果开启了失败时重试其他 Broker
                                     if (this.defaultMQProducer.isRetryAnotherBrokerWhenNotStoreOK()) {
+                                        // 则进行重试
                                         continue;
                                     }
                                 }
 
+                                // 返回发送结果
                                 return sendResult;
                             default:
                                 break;

@@ -127,7 +127,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     private int retryTimesWhenSendAsyncFailed = 2;
 
     /**
-     * Indicate whether to retry another broker on sending failure internally.
+     * 发送失败时, 是否重试另一个 Broker
      */
     private boolean retryAnotherBrokerWhenNotStoreOK = false;
 
