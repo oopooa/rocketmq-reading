@@ -796,7 +796,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             // Set this broker unreachable when detecting schedule task is running for RemotingException.
                             this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, false);
                         } else {
-                            // Otherwise, isolate this broker.
+                            // 否则, 隔离这个 Broker
                             this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true, true);
                         }
                         log.warn("sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s", invokeID, endTimestamp - beginTimestampPrev, mq, e);
@@ -836,6 +836,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 }
             }
 
+            // 如果发送结果不为空, 则返回
             if (sendResult != null) {
                 return sendResult;
             }
