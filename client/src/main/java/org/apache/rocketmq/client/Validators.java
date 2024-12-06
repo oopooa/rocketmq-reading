@@ -40,18 +40,20 @@ public class Validators {
     public static final int TOPIC_MAX_LENGTH = 127;
 
     /**
-     * Validate group
+     * 校验 group 名称
      */
     public static void checkGroup(String group) throws MQClientException {
+        // group 不能为空
         if (UtilAll.isBlank(group)) {
             throw new MQClientException("the specified group is blank", null);
         }
 
+        // group 的长度不能超过 255 个字符
         if (group.length() > CHARACTER_MAX_LENGTH) {
             throw new MQClientException("the specified group is longer than group max length 255.", null);
         }
 
-
+        // group 名称是否包含非法字符 (除大小写字母、数字、%、|、_、-以外的所有字符)
         if (isTopicOrGroupIllegal(group)) {
             throw new MQClientException(String.format(
                     "the specified group[%s] contains illegal characters, allowing only %s", group,

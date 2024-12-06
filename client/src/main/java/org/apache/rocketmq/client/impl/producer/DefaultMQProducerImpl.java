@@ -239,12 +239,17 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     public void start(final boolean startFactory) throws MQClientException {
         switch (this.serviceState) {
+            // 服务仅仅是创建, 不是启动
             case CREATE_JUST:
+                // 先把服务状态改为启动失败, 最终启动成功再改为运行中
                 this.serviceState = ServiceState.START_FAILED;
 
+                // 检查配置
                 this.checkConfig();
 
+                // 如果 producerGroup 名称不是 CLIENT_INNER_PRODUCER
                 if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
+                    // 将当前的实例名称改为当前进程 PID
                     this.defaultMQProducer.changeInstanceNameToPID();
                 }
 
@@ -288,8 +293,10 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     }
 
     private void checkConfig() throws MQClientException {
+        // 校验 producerGroup 名称是否符合规范
         Validators.checkGroup(this.defaultMQProducer.getProducerGroup());
 
+        // 校验 producerGroup 名称是否为默认组名 DEFAULT_PRODUCER
         if (this.defaultMQProducer.getProducerGroup().equals(MixAll.DEFAULT_PRODUCER_GROUP)) {
             throw new MQClientException("producerGroup can not equal " + MixAll.DEFAULT_PRODUCER_GROUP + ", please specify another one.",
                 null);

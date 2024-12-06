@@ -134,7 +134,9 @@ public class ClientConfig {
     }
 
     public void changeInstanceNameToPID() {
+        // 如果实例名称是 DEFAULT, 说明还没被修改过
         if (this.instanceName.equals("DEFAULT")) {
+            // 实例名称改为 PID + 纳秒数
             this.instanceName = UtilAll.getPid() + "#" + System.nanoTime();
         }
     }
